@@ -4,7 +4,7 @@
   "description": "Passport authentication strategy using JSON Web Tokens",
   "main": "./lib",
   "scripts": {
-    "test": "./node_modules/.bin/mocha --reporter spec --require test/bootstrap test/*test.js",
+    "test": "./node_modules/.bin/mocha --reporter spec --require test/bootstrap test/*.test.js",
     "testcov": "nyc npm run test"
   },
   "repository": {

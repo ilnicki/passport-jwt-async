@@ -60,9 +60,9 @@ An example configuration which reads the JWT from the http
 Authorization header with the scheme 'bearer':
 
 ```js
-var JwtStrategy = require('passport-jwt').Strategy,
-    ExtractJwt = require('passport-jwt').ExtractJwt;
-var opts = {}
+const JwtStrategy = require('passport-jwt').Strategy;
+const ExtractJwt = require('passport-jwt').ExtractJwt;
+const opts = {}
 opts.jwtFromRequest = ExtractJwt.fromAuthHeaderAsBearerToken();
 opts.secretOrKey = 'secret';
 opts.issuer = 'accounts.examplesoft.com';
@@ -114,8 +114,8 @@ example, if you are using the cookie-parser middleware and want to extract the J
 you could use the following function as the argument to the jwtFromRequest option:
 
 ```js
-var cookieExtractor = function(req) {
-    var token = null;
+const cookieExtractor = function(req) {
+    const token = null;
     if (req && req.cookies) {
         token = req.cookies['jwt'];
     }
