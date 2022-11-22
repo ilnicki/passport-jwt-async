@@ -1,6 +1,6 @@
 {
-  "name": "passport-jwt",
-  "version": "4.0.0",
+  "name": "passport-jwt-ts",
+  "version": "1.0.0",
   "description": "Passport authentication strategy using JSON Web Tokens",
   "main": "./lib",
   "scripts": {
@@ -9,7 +9,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/mikenicholson/passport-jwt.git"
+    "url": "https://github.com/ilnicki/passport-jwt-ts.git"
   },
   "keywords": [
     "Passport",
@@ -19,12 +19,19 @@
     "Token",
     "JWT"
   ],
-  "author": "Mike Nicholson",
+  "contributors": [
+    {
+      "name": "Mike Nicholson"
+    },
+    {
+      "name": "Dmytro Ilnytskyi"
+    }
+  ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/mikenicholson/passport-jwt/issues"
+    "url": "https://github.com/ilnicki/passport-jwt-ts/issues"
   },
-  "homepage": "https://github.com/mikenicholson/passport-jwt",
+  "homepage": "https://github.com/ilnicki/passport-jwt-ts",
   "devDependencies": {
     "chai": "^3.0.0",
     "chai-passport-strategy": "^1.0.0",
