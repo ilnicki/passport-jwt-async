@@ -1,46 +1,43 @@
-const Strategy = require('../lib/strategy');
+const { JwtStrategy: Strategy } = require('../lib/strategy');
 
-describe('Strategy', function () {
-  const strategy = new Strategy(
-    { jwtFromRequest: function () {}, secretOrKey: 'secret' },
-    function () {}
-  );
+describe('Strategy init', () => {
+  it('should be named jwt', () => {
+    const strategy = new Strategy(
+      { jwtFromRequest: () => {}, secretOrKey: 'secret' },
+      () => {}
+    );
 
-  it('should be named jwt', function () {
     expect(strategy.name).to.equal('jwt');
   });
 
-  it('should throw if constructed without a verify callback', function () {
-    expect(function () {
-      const s = new Strategy({
-        jwtFromRequest: function (r) {},
+  it('should throw if constructed without a verify callback', () => {
+    expect(() => {
+      new Strategy({
+        jwtFromRequest: () => {},
         secretOrKey: 'secret',
       });
     }).to.throw(TypeError, 'JwtStrategy requires a verify callback');
   });
 
-  it('should throw if constructed neither a secretOrKey or a secretOrKeyProvider arg', function () {
-    expect(function () {
-      const s = new Strategy(
-        { jwtFromRequest: function (r) {}, secretOrKey: null },
-        function () {}
-      );
+  it('should throw if constructed neither a secretOrKey or a secretOrKeyProvider arg', () => {
+    expect(() => {
+      new Strategy({ jwtFromRequest: () => {}, secretOrKey: null }, () => {});
     }).to.throw(TypeError, 'JwtStrategy requires a secret or key');
   });
 
-  it('should throw if constructed with both a secretOrKey and a secretOrKeyProvider', function () {
-    expect(function () {
-      const s = new Strategy({
+  it('should throw if constructed with both a secretOrKey and a secretOrKeyProvider', () => {
+    expect(() => {
+      new Strategy({
         secretOrKey: 'secret',
-        secretOrKeyProvider: function (req, token, done) {},
-        jwtFromRequest: function (r) {},
+        secretOrKeyProvider: () => {},
+        jwtFromRequest: () => {},
       });
     }).to.throw(TypeError);
   });
 
-  it('should throw if constructed without a jwtFromRequest arg', function () {
-    expect(function () {
-      const s = new Strategy({ secretOrKey: 'secret' }, function () {});
+  it('should throw if constructed without a jwtFromRequest arg', () => {
+    expect(() => {
+      new Strategy({ secretOrKey: 'secret' }, () => {});
     }).to.throw(TypeError);
   });
 });

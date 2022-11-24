@@ -1,4 +1,5 @@
-const { Strategy } = require('passport-strategy');
+import { Strategy } from 'passport-strategy';
+import JwtVerifier from './verify-jwt';
 
 /**
  * Strategy constructor
@@ -19,21 +20,21 @@ const { Strategy } = require('passport-strategy');
  * @param verify - Verify callback with args (jwt_payload, done_callback) if passReqToCallback is false,
  *                 (request, jwt_payload, done_callback) if true.
  */
-class JwtStrategy extends Strategy {
-  /**
-   * Allow for injection of JWT Verifier.
-   *
-   * This improves testability by allowing tests to cleanly isolate failures in the JWT Verification
-   * process from failures in the passport related mechanics of authentication.
-   *
-   * Note that this should only be replaced in tests.
-   */
-  static JwtVerifier = require('./verify-jwt');
+export class JwtStrategy extends Strategy {
+  private verifyJwt: any;
+  private _secretOrKeyProvider: any;
+  private _verify: any;
+  private _jwtFromRequest: any;
+  private _passReqToCallback: any;
+  private _verifOpts: any;
+
+  public name: string;
 
   constructor(options, verify) {
     super();
 
     this.name = 'jwt';
+    this.verifyJwt = options.verifyJwt ?? JwtVerifier;
 
     this._secretOrKeyProvider = options.secretOrKeyProvider;
 
@@ -43,7 +44,7 @@ class JwtStrategy extends Strategy {
           'JwtStrategy has been given both a secretOrKey and a secretOrKeyProvider'
         );
       }
-      this._secretOrKeyProvider = function (request, rawJwtToken, done) {
+      this._secretOrKeyProvider = (request, rawJwtToken, done) => {
         done(null, options.secretOrKey);
       };
     }
@@ -80,61 +81,50 @@ class JwtStrategy extends Strategy {
   /**
    * Authenticate request based on JWT obtained from header or post body
    */
-  authenticate(req, options) {
-    const self = this;
-
-    const token = self._jwtFromRequest(req);
+  public authenticate(req, options) {
+    const token = this._jwtFromRequest(req);
 
     if (!token) {
-      return self.fail(new Error('No auth token'));
+      return this.fail(new Error('No auth token'), 401);
     }
 
-    this._secretOrKeyProvider(
-      req,
-      token,
-      function (secretOrKeyError, secretOrKey) {
-        if (secretOrKeyError) {
-          self.fail(secretOrKeyError);
-        } else {
-          // Verify the JWT
-          JwtStrategy.JwtVerifier(
-            token,
-            secretOrKey,
-            self._verifOpts,
-            function (jwt_err, payload) {
-              if (jwt_err) {
-                return self.fail(jwt_err);
-              } else {
-                // Pass the parsed token to the user
-                const verified = function (err, user, info) {
-                  if (err) {
-                    return self.error(err);
-                  } else if (!user) {
-                    return self.fail(info);
-                  } else {
-                    return self.success(user, info);
-                  }
-                };
-
-                try {
-                  if (self._passReqToCallback) {
-                    self._verify(req, payload, verified);
-                  } else {
-                    self._verify(payload, verified);
-                  }
-                } catch (ex) {
-                  self.error(ex);
+    this._secretOrKeyProvider(req, token, (secretOrKeyError, secretOrKey) => {
+      if (secretOrKeyError) {
+        this.fail(secretOrKeyError);
+      } else {
+        // Verify the JWT
+        this.verifyJwt(
+          token,
+          secretOrKey,
+          this._verifOpts,
+          (jwt_err, payload) => {
+            if (jwt_err) {
+              return this.fail(jwt_err);
+            } else {
+              // Pass the parsed token to the user
+              const verified = (err, user, info) => {
+                if (err) {
+                  return this.error(err);
+                } else if (!user) {
+                  return this.fail(info);
+                } else {
+                  return this.success(user, info);
                 }
+              };
+
+              try {
+                if (this._passReqToCallback) {
+                  this._verify(req, payload, verified);
+                } else {
+                  this._verify(payload, verified);
+                }
+              } catch (ex) {
+                this.error(ex);
               }
             }
-          );
-        }
+          }
+        );
       }
-    );
+    });
   }
 }
-
-/**
- * Export the Jwt Strategy
- */
-module.exports = JwtStrategy;

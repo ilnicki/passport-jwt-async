@@ -4,7 +4,8 @@
   "description": "Passport authentication strategy using JSON Web Tokens",
   "main": "./lib",
   "scripts": {
-    "test": "./node_modules/.bin/mocha --reporter spec --require test/bootstrap test/*.test.js",
+    "build": "tsc",
+    "test": "npm run build && ./node_modules/.bin/mocha --reporter spec --require test/bootstrap test/*.test.js",
     "testcov": "nyc npm run test"
   },
   "repository": {
@@ -33,11 +34,15 @@
   },
   "homepage": "https://github.com/ilnicki/passport-jwt-ts",
   "devDependencies": {
+    "@types/jsonwebtoken": "^8.5.9",
+    "@types/node": "^18.11.9",
+    "@types/passport-strategy": "^0.2.35",
     "chai": "^3.0.0",
     "chai-passport-strategy": "^1.0.0",
     "mocha": "^9.2.1",
     "nyc": "^15.1.0",
-    "sinon": "^1.0.0"
+    "sinon": "^1.0.0",
+    "typescript": "^4.9.3"
   },
   "dependencies": {
     "jsonwebtoken": "^8.5.1",

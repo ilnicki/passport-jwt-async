@@ -1,164 +1,165 @@
 const chai = require('chai');
-const Strategy = require('../lib/strategy');
+const { JwtStrategy: Strategy } = require('../lib/strategy');
 const testData = require('./testdata');
 const sinon = require('sinon');
 const extractJwt = require('../lib/extract-jwt');
 
-describe('Strategy', function () {
-  before(function () {
-    Strategy.JwtVerifier = sinon.stub();
-    Strategy.JwtVerifier.callsArgWith(3, null, testData.valid_jwt.payload);
+describe('Strategy verify', () => {
+  let verifyJwtStub;
+  before(() => {
+    verifyJwtStub = sinon.stub();
+    verifyJwtStub.callsArgWith(3, null, testData.valid_jwt.payload);
   });
 
-  describe('Handling a request with a valid JWT and succesful verification', function () {
+  describe('Handling a request with a valid JWT and succesful verification', () => {
     let strategy;
     let user;
     let info;
 
-    before(function (done) {
+    before((done) => {
       strategy = new Strategy(
         {
           jwtFromRequest: extractJwt.fromAuthHeaderAsBearerToken(),
           secretOrKey: 'secret',
+          verifyJwt: verifyJwtStub,
         },
-        function (jwt_paylod, next) {
-          return next(null, { user_id: 1234567890 }, { foo: 'bar' });
-        }
+        (jwt_paylod, next) =>
+          next(null, { user_id: 1234567890 }, { foo: 'bar' })
       );
 
       chai.passport
         .use(strategy)
-        .success(function (u, i) {
+        .success((u, i) => {
           user = u;
           info = i;
           done();
         })
-        .req(function (req) {
+        .req((req) => {
           req.headers['authorization'] = 'bearer ' + testData.valid_jwt.token;
         })
         .authenticate();
     });
 
-    it('should provide a user', function () {
+    it('should provide a user', () => {
       expect(user).to.be.an.object;
       expect(user.user_id).to.equal(1234567890);
     });
 
-    it('should forward info', function () {
+    it('should forward info', () => {
       expect(info).to.be.an.object;
       expect(info.foo).to.equal('bar');
     });
   });
 
-  describe('handling a request with valid jwt and failed verification', function () {
+  describe('handling a request with valid jwt and failed verification', () => {
     let strategy;
     let info;
 
-    before(function (done) {
+    before((done) => {
       strategy = new Strategy(
         {
           jwtFromRequest: extractJwt.fromAuthHeaderAsBearerToken(),
           secretOrKey: 'secret',
+          verifyJwt: verifyJwtStub,
         },
-        function (jwt_payload, next) {
-          return next(null, false, { message: 'invalid user' });
-        }
+        (jwt_payload, next) => next(null, false, { message: 'invalid user' })
       );
 
       chai.passport
         .use(strategy)
-        .fail(function (i) {
+        .fail((i) => {
           info = i;
           done();
         })
-        .req(function (req) {
+        .req((req) => {
           req.headers['authorization'] = 'bearer ' + testData.valid_jwt.token;
         })
         .authenticate();
     });
 
-    it('should fail with info', function () {
+    it('should fail with info', () => {
       expect(info).to.be.an.object;
       expect(info.message).to.equal('invalid user');
     });
   });
 
-  describe('handling a request with a valid jwt and an error during verification', function () {
+  describe('handling a request with a valid jwt and an error during verification', () => {
     let strategy;
     let err;
 
-    before(function (done) {
+    before((done) => {
       strategy = new Strategy(
         {
           jwtFromRequest: extractJwt.fromAuthHeaderAsBearerToken(),
           secretOrKey: 'secrety',
+          verifyJwt: verifyJwtStub,
         },
-        function (jwt_payload, next) {
-          return next(new Error('ERROR'), false, { message: 'invalid user' });
-        }
+        (jwt_payload, next) =>
+          next(new Error('ERROR'), false, { message: 'invalid user' })
       );
 
       chai.passport
         .use(strategy)
-        .error(function (e) {
+        .error((e) => {
           err = e;
           done();
         })
-        .req(function (req) {
+        .req((req) => {
           req.headers['authorization'] = 'bearer ' + testData.valid_jwt.token;
         })
         .authenticate();
     });
 
-    it('should error', function () {
+    it('should error', () => {
       expect(err).to.be.an.instanceof(Error);
       expect(err.message).to.equal('ERROR');
     });
   });
 
-  describe('handling a request with a valid jwt and an exception during verification', function () {
+  describe('handling a request with a valid jwt and an exception during verification', () => {
     let strategy;
     let err;
 
-    before(function (done) {
+    before((done) => {
       strategy = new Strategy(
         {
           jwtFromRequest: extractJwt.fromAuthHeaderAsBearerToken(),
           secretOrKey: 'secret',
+          verifyJwt: verifyJwtStub,
         },
-        function (jwt_payload, next) {
+        (jwt_payload, next) => {
           throw new Error('EXCEPTION');
         }
       );
 
       chai.passport
         .use(strategy)
-        .error(function (e) {
+        .error((e) => {
           err = e;
           done();
         })
-        .req(function (req) {
+        .req((req) => {
           req.headers['authorization'] = 'bearer ' + testData.valid_jwt.token;
         })
         .authenticate();
     });
 
-    it('should error', function () {
+    it('should error', () => {
       expect(err).to.be.an.instanceof(Error);
       expect(err.message).to.equal('EXCEPTION');
     });
   });
 
-  describe('handling a request with a valid jwt and option passReqToCallback is true', function () {
+  describe('handling a request with a valid jwt and option passReqToCallback is true', () => {
     let strategy;
     let expected_request;
     let request_arg;
 
-    before(function (done) {
-      opts = { passReqToCallback: true };
+    before((done) => {
+      opts = { passReqToCallback: true, verifyJwt: verifyJwtStub };
       opts.secretOrKey = 'secret';
       opts.jwtFromRequest = extractJwt.fromAuthHeaderAsBearerToken();
-      strategy = new Strategy(opts, function (request, jwt_payload, next) {
+      strategy = new Strategy(opts, (request, jwt_payload, next) => {
         // Capture the value passed in as the request argument
         request_arg = request;
         return next(null, { user_id: 1234567890 }, { foo: 'bar' });
@@ -166,52 +167,51 @@ describe('Strategy', function () {
 
       chai.passport
         .use(strategy)
-        .success(function (u, i) {
+        .success((u, i) => {
           done();
         })
-        .req(function (req) {
+        .req((req) => {
           req.headers['authorization'] = 'bearer ' + testData.valid_jwt.token;
           expected_request = req;
         })
         .authenticate();
     });
 
-    it('will call verify with request as the first argument', function () {
+    it('will call verify with request as the first argument', () => {
       expect(expected_request).to.equal(request_arg);
     });
   });
 
-  describe('handling a request when constructed with a secretOrKeyProvider function that succeeds', function () {
+  describe('handling a request when constructed with a secretOrKeyProvider function that succeeds', () => {
     let strategy;
     let fakeSecretOrKeyProvider;
     let expectedReqeust;
 
-    before(function (done) {
-      fakeSecretOrKeyProvider = sinon.spy(function (request, token, done) {
+    before((done) => {
+      fakeSecretOrKeyProvider = sinon.spy((request, token, done) => {
         done(null, 'secret from callback');
       });
       opts = {
         secretOrKeyProvider: fakeSecretOrKeyProvider,
-        jwtFromRequest: function (request) {
-          return 'an undecoded jwt string';
-        },
+        jwtFromRequest: (request) => 'an undecoded jwt string',
+        verifyJwt: verifyJwtStub,
       };
-      strategy = new Strategy(opts, function (jwtPayload, next) {
-        return next(null, { user_id: 'dont care' }, {});
-      });
+      strategy = new Strategy(opts, (jwtPayload, next) =>
+        next(null, { user_id: 'dont care' }, {})
+      );
 
       chai.passport
         .use(strategy)
-        .success(function (u, i) {
+        .success(() => {
           done();
         })
-        .req(function (req) {
+        .req((req) => {
           expectedReqeust = req;
         })
         .authenticate();
     });
 
-    it('should call the fake secret or key provider with the reqeust', function () {
+    it('should call the fake secret or key provider with the reqeust', () => {
       expect(
         fakeSecretOrKeyProvider.calledWith(
           expectedReqeust,
@@ -221,7 +221,7 @@ describe('Strategy', function () {
       ).to.be.true;
     });
 
-    it('should call the secretOrKeyProvider with the undecoded jwt', function () {
+    it('should call the secretOrKeyProvider with the undecoded jwt', () => {
       expect(
         fakeSecretOrKeyProvider.calledWith(
           sinon.match.any,
@@ -231,9 +231,9 @@ describe('Strategy', function () {
       ).to.be.true;
     });
 
-    it('should call JwtVerifier with the value returned from secretOrKeyProvider', function () {
+    it('should call verifyJwt with the value returned from secretOrKeyProvider', () => {
       expect(
-        Strategy.JwtVerifier.calledWith(
+        verifyJwtStub.calledWith(
           sinon.match.any,
           'secret from callback',
           sinon.match.any,
@@ -243,33 +243,32 @@ describe('Strategy', function () {
     });
   });
 
-  describe('handling a request when constructed with a secretOrKeyProvider function that errors', function () {
+  describe('handling a request when constructed with a secretOrKeyProvider function that errors', () => {
     let errorMessage;
 
-    before(function (done) {
-      fakeSecretOrKeyProvider = sinon.spy(function (request, token, done) {
+    before((done) => {
+      fakeSecretOrKeyProvider = sinon.spy((request, token, done) => {
         done('Error occurred looking for the secret');
       });
       opts = {
         secretOrKeyProvider: fakeSecretOrKeyProvider,
-        jwtFromRequest: function (request) {
-          return 'an undecoded jwt string';
-        },
+        jwtFromRequest: (request) => 'an undecoded jwt string',
+        verifyJwt: verifyJwtStub,
       };
-      strategy = new Strategy(opts, function (jwtPayload, next) {
-        return next(null, { user_id: 'dont care' }, {});
-      });
+      strategy = new Strategy(opts, (jwtPayload, next) =>
+        next(null, { user_id: 'dont care' }, {})
+      );
 
       chai.passport
         .use(strategy)
-        .fail(function (i) {
+        .fail((i) => {
           errorMessage = i;
           done();
         })
         .authenticate();
     });
 
-    it('should fail with the error message from the secretOrKeyProvider', function () {
+    it('should fail with the error message from the secretOrKeyProvider', () => {
       expect(errorMessage).to.equal('Error occurred looking for the secret');
     });
   });
