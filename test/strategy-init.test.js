@@ -1,4 +1,5 @@
 const { JwtStrategy: Strategy } = require('../lib/strategy');
+const { expect } = require('chai');
 
 describe('Strategy init', () => {
   it('should be named jwt', () => {

@@ -1,4 +1,5 @@
 const extractJwt = require('../lib/extract-jwt');
+const { expect } = require('chai');
 
 describe('Token extractor', () => {
   describe('fromHeader', () => {

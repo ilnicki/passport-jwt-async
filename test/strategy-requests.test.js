@@ -1,5 +1,5 @@
 const { JwtStrategy: Strategy } = require('../lib/strategy');
-const chai = require('chai');
+const { expect, passport } = require('chai');
 const sinon = require('sinon');
 const testData = require('./testdata');
 const url = require('url');
@@ -29,7 +29,7 @@ describe('Strategy requests', () => {
 
       verifyJwtMock.reset();
 
-      chai.passport
+      passport
         .use(strategy)
         .success(() => {
           done();
@@ -60,7 +60,7 @@ describe('Strategy requests', () => {
 
       verifyJwtMock.reset();
 
-      chai.passport
+      passport
         .use(strategy)
         .fail((i) => {
           info = i;
@@ -73,8 +73,7 @@ describe('Strategy requests', () => {
     });
 
     it('should fail authentication', () => {
-      expect(info).to.be.an.object;
-      expect(info.message).to.equal('No auth token');
+      expect(info).to.have.property('message', 'No auth token');
     });
 
     it('Should not try to verify anything', () => {
@@ -99,7 +98,7 @@ describe('Strategy requests', () => {
 
       verifyJwtMock.reset();
 
-      chai.passport
+      passport
         .use(strategy)
         .fail((i) => {
           info = i;
@@ -113,8 +112,7 @@ describe('Strategy requests', () => {
     });
 
     it('should fail authentication', () => {
-      expect(info).to.be.an.object;
-      expect(info.message).to.equal('No auth token');
+      expect(info).to.have.property('message', 'No auth token');
     });
   });
 });

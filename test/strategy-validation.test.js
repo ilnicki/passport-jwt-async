@@ -1,5 +1,5 @@
 const { JwtStrategy: Strategy } = require('../lib/strategy');
-const chai = require('chai');
+const { expect, passport } = require('chai');
 const test_data = require('./testdata');
 const sinon = require('sinon');
 const extractJwt = require('../lib/extract-jwt');
@@ -32,7 +32,7 @@ describe('Strategy validation', () => {
 
       strategy = new Strategy(options, verifyStub);
 
-      chai.passport
+      passport
         .use(strategy)
         .success(() => {
           done();
@@ -44,13 +44,14 @@ describe('Strategy validation', () => {
     });
 
     it('should call with the right secret as an argument', () => {
-      expect(verifyJwtStub.args[0][0]).to.be.an.object;
-      expect(verifyJwtStub.args[0][0].secretOrKey).to.equal('secret');
+      expect(verifyJwtStub.args[0][0]).to.have.property(
+        'secretOrKey',
+        'secret'
+      );
     });
 
     it('should call with the right options', () => {
-      expect(verifyJwtStub.args[0][0]).to.be.an.object;
-      expect(verifyJwtStub.args[0][0].options).to.be.an.object;
+      expect(verifyJwtStub.args[0][0]).to.have.property('options');
       expect(verifyJwtStub.args[0][0].options).to.deep.equal({
         algorithms: ['HS256', 'HS384'],
         issuer: 'TestIssuer',
@@ -82,7 +83,7 @@ describe('Strategy validation', () => {
         }
       );
 
-      chai.passport
+      passport
         .use(strategy)
         .success(() => {
           done();
@@ -116,7 +117,7 @@ describe('Strategy validation', () => {
         verify_spy
       );
 
-      chai.passport
+      passport
         .use(strategy)
         .fail((i) => {
           info = i;
@@ -133,8 +134,7 @@ describe('Strategy validation', () => {
     });
 
     it('should fail with error message.', () => {
-      expect(info).to.be.an.object;
-      expect(info.message).to.equal('jwt expired');
+      expect(info).to.have.property('message', 'jwt expired');
     });
   });
 
@@ -152,7 +152,7 @@ describe('Strategy validation', () => {
         verify_spy
       );
 
-      chai.passport
+      passport
         .use(strategy)
         .fail((i) => {
           info = i;
@@ -169,7 +169,6 @@ describe('Strategy validation', () => {
     });
 
     it('should fail with error message.', () => {
-      expect(info).to.be.an.object;
       expect(info).to.be.an.instanceof(Error);
     });
   });

@@ -1,4 +1,5 @@
 const authHeader = require('../lib/auth-header');
+const { expect } = require('chai');
 
 describe('Parsing Auth Header field-value', () => {
   it('Should handle single space separated values', () => {

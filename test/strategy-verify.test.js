@@ -1,4 +1,4 @@
-const chai = require('chai');
+const { expect, passport } = require('chai');
 const { JwtStrategy: Strategy } = require('../lib/strategy');
 const testData = require('./testdata');
 const sinon = require('sinon');
@@ -26,7 +26,7 @@ describe('Strategy verify', () => {
           next(null, { user_id: 1234567890 }, { foo: 'bar' })
       );
 
-      chai.passport
+      passport
         .use(strategy)
         .success((u, i) => {
           console.log(u, i);
@@ -41,13 +41,11 @@ describe('Strategy verify', () => {
     });
 
     it('should provide a user', () => {
-      expect(user).to.be.an.object;
-      expect(user.user_id).to.equal(1234567890);
+      expect(user).to.have.property('user_id', 1234567890);
     });
 
     it('should forward info', () => {
-      expect(info).to.be.an.object;
-      expect(info.foo).to.equal('bar');
+      expect(info).to.have.property('foo', 'bar');
     });
   });
 
@@ -65,7 +63,7 @@ describe('Strategy verify', () => {
         (jwt_payload, next) => next(null, false, { message: 'invalid user' })
       );
 
-      chai.passport
+      passport
         .use(strategy)
         .fail((i) => {
           info = i;
@@ -78,8 +76,7 @@ describe('Strategy verify', () => {
     });
 
     it('should fail with info', () => {
-      expect(info).to.be.an.object;
-      expect(info.message).to.equal('invalid user');
+      expect(info).to.have.property('message', 'invalid user');
     });
   });
 
@@ -100,7 +97,7 @@ describe('Strategy verify', () => {
           next(new Error('ERROR'), false, { message: 'invalid user' })
       );
 
-      chai.passport
+      passport
         .use(strategy)
         .error((e) => {
           err = e;
@@ -134,7 +131,7 @@ describe('Strategy verify', () => {
         }
       );
 
-      chai.passport
+      passport
         .use(strategy)
         .error((e) => {
           err = e;
@@ -172,7 +169,7 @@ describe('Strategy verify', () => {
         }
       );
 
-      chai.passport
+      passport
         .use(strategy)
         .success(() => {
           done();
@@ -209,7 +206,7 @@ describe('Strategy verify', () => {
         (jwtPayload, next) => next(null, { user_id: 'dont care' }, {})
       );
 
-      chai.passport
+      passport
         .use(strategy)
         .success(() => {
           done();
@@ -258,7 +255,7 @@ describe('Strategy verify', () => {
         next(null, { user_id: 'dont care' }, {})
       );
 
-      chai.passport
+      passport
         .use(strategy)
         .fail((i) => {
           errorMessage = i;
