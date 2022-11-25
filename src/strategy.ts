@@ -1,7 +1,8 @@
 import { Request } from 'express';
+import { JwtPayload } from 'jsonwebtoken';
 import { Strategy } from 'passport-strategy';
 import { TokenExtractor } from './extract-jwt';
-import JwtVerifier from './verify-jwt';
+import { auth0JwtVerifier } from './verify-jwt';
 
 export type SecretOrKeyProvider = (
   request: Request,
@@ -13,8 +14,14 @@ export type VerifyCallback = (
     payload: any;
     request?: Request;
   },
-  done: (err: unknown, user, info) => void
+  done: (err: Error, user: any, info?: any) => void
 ) => void;
+
+export type JwtVerifier = (params: {
+  token: string;
+  secretOrKey: string | Buffer;
+  options: object;
+}) => Promise<JwtPayload>;
 
 export interface JwtStrategyOptions {
   /**
@@ -36,7 +43,7 @@ export interface JwtStrategyOptions {
    * Function that accepts a request as the only parameter and returns
    * the either JWT as a string or null
    */
-  jwtFromRequest: any;
+  extractToken: TokenExtractor;
 
   /**
    * If defined issuer will be verified against this value
@@ -63,7 +70,7 @@ export interface JwtStrategyOptions {
    */
   passReqToCallback: boolean;
 
-  verifyJwt: any;
+  verifyJwt: JwtVerifier;
 
   verifyJwtOptions: any;
 }
@@ -77,23 +84,23 @@ export interface JwtStrategyOptions {
  *                 (request, jwt_payload, done_callback) if true.
  */
 export class JwtStrategy extends Strategy {
-  private verifyJwt: any;
-  private verifyJwtOptions: any;
+  private verifyJwt: JwtVerifier;
+  private verifyJwtOptions: object;
 
   private secretOrKeyProvider: SecretOrKeyProvider;
-  private jwtFromRequest: TokenExtractor;
+  private extractToken: TokenExtractor;
   private passReqToCallback: boolean;
 
   public name = 'jwt';
 
   constructor(
     {
-      verifyJwt = JwtVerifier,
+      verifyJwt = auth0JwtVerifier,
       secretOrKeyProvider,
       secretOrKey,
       passReqToCallback = false,
       verifyJwtOptions = {},
-      jwtFromRequest,
+      extractToken,
     }: JwtStrategyOptions,
     private readonly verify: VerifyCallback
   ) {
@@ -120,10 +127,10 @@ export class JwtStrategy extends Strategy {
       throw new TypeError('JwtStrategy requires a secret or key');
     }
 
-    this.jwtFromRequest = jwtFromRequest;
-    if (!this.jwtFromRequest) {
+    this.extractToken = extractToken;
+    if (!this.extractToken) {
       throw new TypeError(
-        'JwtStrategy requires a function to retrieve jwt from requests (see option jwtFromRequest)'
+        'JwtStrategy requires a function to retrieve jwt from requests (see option extractToken)'
       );
     }
 
@@ -131,11 +138,29 @@ export class JwtStrategy extends Strategy {
     this.verifyJwtOptions = verifyJwtOptions;
   }
 
+  private async verifyAsync(
+    params: Parameters<VerifyCallback>[0]
+  ): Promise<{ user?: any; info?: any }> {
+    return new Promise((resolve, reject) => {
+      try {
+        this.verify(params, (err, user, info) => {
+          if (err) {
+            return reject(err);
+          }
+
+          return resolve({ user, info });
+        });
+      } catch (err) {
+        return reject(err);
+      }
+    });
+  }
+
   /**
    * Authenticate request based on JWT obtained from header or post body
    */
   public async authenticate(request: Request, options): Promise<void> {
-    const token = this.jwtFromRequest(request);
+    const token = this.extractToken(request);
 
     if (!token) {
       return this.fail(new Error('No auth token'), 401);
@@ -143,40 +168,28 @@ export class JwtStrategy extends Strategy {
 
     try {
       const secretOrKey = await this.secretOrKeyProvider(request, token);
-
-      this.verifyJwt(
+      const payload = await this.verifyJwt({
         token,
         secretOrKey,
-        this.verifyJwtOptions,
-        (jwtError, payload) => {
-          if (jwtError) {
-            return this.fail(jwtError);
-          } else {
-            // Pass the parsed token to the user
-            const verified = (err, user, info) => {
-              if (err) {
-                return this.error(err);
-              } else if (!user) {
-                return this.fail(info);
-              } else {
-                return this.success(user, info);
-              }
-            };
+        options: this.verifyJwtOptions,
+      });
 
-            try {
-              if (this.passReqToCallback) {
-                this.verify({ request, payload }, verified);
-              } else {
-                this.verify({ payload }, verified);
-              }
-            } catch (ex) {
-              this.error(ex);
-            }
-          }
+      try {
+        const { user, info } = await this.verifyAsync({
+          payload,
+          ...(this.passReqToCallback && { request }),
+        });
+
+        if (!user) {
+          return this.fail(info);
         }
-      );
+
+        return this.success(user, info);
+      } catch (verifyError) {
+        return this.error(verifyError);
+      }
     } catch (secretOrKeyError) {
-      this.fail(secretOrKeyError, 401);
+      return this.fail(secretOrKeyError, 401);
     }
   }
 }

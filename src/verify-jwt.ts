@@ -1,8 +1,22 @@
-import { verify } from 'jsonwebtoken';
+import { JwtPayload, verify } from 'jsonwebtoken';
+import type { JwtVerifier } from './strategy';
 
-export default (
-  token: string,
-  secretOrKey: string | Buffer,
+export const auth0JwtVerifier: JwtVerifier = ({
+  token,
+  secretOrKey,
   options,
-  callback
-) => verify(token, secretOrKey, options, callback);
+}) =>
+  new Promise((resolve, reject) => {
+    verify(
+      token,
+      secretOrKey,
+      { ...options, complete: false },
+      (error, decoded) => {
+        if (error) {
+          return reject(error);
+        }
+
+        return resolve(decoded as JwtPayload);
+      }
+    );
+  });

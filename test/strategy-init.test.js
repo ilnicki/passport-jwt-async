@@ -3,7 +3,7 @@ const { JwtStrategy: Strategy } = require('../lib/strategy');
 describe('Strategy init', () => {
   it('should be named jwt', () => {
     const strategy = new Strategy(
-      { jwtFromRequest: () => {}, secretOrKey: 'secret' },
+      { extractToken: () => {}, secretOrKey: 'secret' },
       () => {}
     );
 
@@ -13,7 +13,7 @@ describe('Strategy init', () => {
   it('should throw if constructed without a verify callback', () => {
     expect(() => {
       new Strategy({
-        jwtFromRequest: () => {},
+        extractToken: () => {},
         secretOrKey: 'secret',
       });
     }).to.throw(TypeError, 'JwtStrategy requires a verify callback');
@@ -21,7 +21,7 @@ describe('Strategy init', () => {
 
   it('should throw if constructed neither a secretOrKey or a secretOrKeyProvider arg', () => {
     expect(() => {
-      new Strategy({ jwtFromRequest: () => {}, secretOrKey: null }, () => {});
+      new Strategy({ extractToken: () => {}, secretOrKey: null }, () => {});
     }).to.throw(TypeError, 'JwtStrategy requires a secret or key');
   });
 
@@ -30,12 +30,12 @@ describe('Strategy init', () => {
       new Strategy({
         secretOrKey: 'secret',
         secretOrKeyProvider: () => 'secret',
-        jwtFromRequest: () => {},
+        extractToken: () => {},
       });
     }).to.throw(TypeError);
   });
 
-  it('should throw if constructed without a jwtFromRequest arg', () => {
+  it('should throw if constructed without a extractToken arg', () => {
     expect(() => {
       new Strategy({ secretOrKey: 'secret' }, () => {});
     }).to.throw(TypeError);

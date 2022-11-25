@@ -14,7 +14,7 @@ describe('Strategy validation', () => {
       verifyStub.callsArgWith(1, null, {}, {});
 
       verifyJwtStub = sinon.stub();
-      verifyJwtStub.callsArgWith(3, null, test_data.valid_jwt.payload);
+      verifyJwtStub.resolves(test_data.valid_jwt.payload);
 
       const options = {
         secretOrKey: 'secret',
@@ -27,7 +27,7 @@ describe('Strategy validation', () => {
           maxAge: '1h',
           ignoreExpiration: false,
         },
-        jwtFromRequest: extractJwt.fromAuthHeaderAsBearerToken(),
+        extractToken: extractJwt.fromAuthHeaderAsBearerToken(),
       };
 
       strategy = new Strategy(options, verifyStub);
@@ -44,37 +44,21 @@ describe('Strategy validation', () => {
     });
 
     it('should call with the right secret as an argument', () => {
-      expect(verifyJwtStub.args[0][1]).to.equal('secret');
+      expect(verifyJwtStub.args[0][0]).to.be.an.object;
+      expect(verifyJwtStub.args[0][0].secretOrKey).to.equal('secret');
     });
 
-    it('should call with the right issuer option', () => {
-      expect(verifyJwtStub.args[0][2]).to.be.an.object;
-      expect(verifyJwtStub.args[0][2].issuer).to.equal('TestIssuer');
-    });
-
-    it('should call with the right audience option', () => {
-      expect(verifyJwtStub.args[0][2]).to.be.an.object;
-      expect(verifyJwtStub.args[0][2].audience).to.equal('TestAudience');
-    });
-
-    it('should call with the right algorithms option', () => {
-      expect(verifyJwtStub.args[0][2]).to.be.an.object;
-      expect(verifyJwtStub.args[0][2].algorithms).to.eql(['HS256', 'HS384']);
-    });
-
-    it('should call with the right ignoreExpiration option', () => {
-      expect(verifyJwtStub.args[0][2]).to.be.an.object;
-      expect(verifyJwtStub.args[0][2].ignoreExpiration).to.be.false;
-    });
-
-    it('should call with the right maxAge option', () => {
-      expect(verifyJwtStub.args[0][2]).to.be.an.object;
-      expect(verifyJwtStub.args[0][2].maxAge).to.equal('1h');
-    });
-
-    it('should call with the right clockTolerance option', () => {
-      expect(verifyJwtStub.args[0][2]).to.be.an.object;
-      expect(verifyJwtStub.args[0][2].clockTolerance).to.equal(10);
+    it('should call with the right options', () => {
+      expect(verifyJwtStub.args[0][0]).to.be.an.object;
+      expect(verifyJwtStub.args[0][0].options).to.be.an.object;
+      expect(verifyJwtStub.args[0][0].options).to.deep.equal({
+        algorithms: ['HS256', 'HS384'],
+        issuer: 'TestIssuer',
+        audience: 'TestAudience',
+        clockTolerance: 10,
+        maxAge: '1h',
+        ignoreExpiration: false,
+      });
     });
   });
 
@@ -84,9 +68,11 @@ describe('Strategy validation', () => {
 
     before((done) => {
       const verifyJwtStub = sinon.stub();
+      verifyJwtStub.resolves(test_data.valid_jwt.payload);
+
       strategy = new Strategy(
         {
-          jwtFromRequest: extractJwt.fromAuthHeaderAsBearerToken(),
+          extractToken: extractJwt.fromAuthHeaderAsBearerToken(),
           secretOrKey: 'secret',
           verifyJwt: verifyJwtStub,
         },
@@ -95,8 +81,6 @@ describe('Strategy validation', () => {
           next(null, {}, {});
         }
       );
-
-      verifyJwtStub.callsArgWith(3, null, test_data.valid_jwt.payload);
 
       chai.passport
         .use(strategy)
@@ -121,16 +105,16 @@ describe('Strategy validation', () => {
 
     before((done) => {
       const verifyJwtStub = sinon.stub();
+      verifyJwtStub.rejects(new Error('jwt expired'));
+
       strategy = new Strategy(
         {
-          jwtFromRequest: extractJwt.fromAuthHeaderAsBearerToken(),
+          extractToken: extractJwt.fromAuthHeaderAsBearerToken(),
           secretOrKey: 'secret',
           verifyJwt: verifyJwtStub,
         },
         verify_spy
       );
-
-      verifyJwtStub.callsArgWith(3, new Error('jwt expired'), false);
 
       chai.passport
         .use(strategy)
@@ -162,7 +146,7 @@ describe('Strategy validation', () => {
     before((done) => {
       strategy = new Strategy(
         {
-          jwtFromRequest: extractJwt.fromAuthHeaderAsBearerToken(),
+          extractToken: extractJwt.fromAuthHeaderAsBearerToken(),
           secretOrKey: 'secret',
         },
         verify_spy

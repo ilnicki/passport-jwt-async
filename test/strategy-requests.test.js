@@ -9,7 +9,7 @@ describe('Strategy requests', () => {
 
   before(() => {
     verifyJwtMock = sinon.stub();
-    verifyJwtMock.callsArgWith(3, null, testData.valid_jwt.payload);
+    verifyJwtMock.resolves(testData.valid_jwt.payload);
   });
 
   describe('handling request JWT present in request', () => {
@@ -18,7 +18,7 @@ describe('Strategy requests', () => {
     before((done) => {
       strategy = new Strategy(
         {
-          jwtFromRequest: () => testData.valid_jwt.token,
+          extractToken: () => testData.valid_jwt.token,
           secretOrKey: 'secret',
           verifyJwt: verifyJwtMock,
         },
@@ -39,7 +39,7 @@ describe('Strategy requests', () => {
 
     it('verifies the right jwt', () => {
       sinon.assert.calledOnce(verifyJwtMock);
-      expect(verifyJwtMock.args[0][0]).to.equal(testData.valid_jwt.token);
+      expect(verifyJwtMock.args[0][0].token).to.equal(testData.valid_jwt.token);
     });
   });
 
@@ -49,7 +49,7 @@ describe('Strategy requests', () => {
     before((done) => {
       strategy = new Strategy(
         {
-          jwtFromRequest: () => {},
+          extractToken: () => {},
           secretOrKey: 'secret',
           verifyJwt: verifyJwtMock,
         },
@@ -88,7 +88,7 @@ describe('Strategy requests', () => {
     before((done) => {
       strategy = new Strategy(
         {
-          jwtFromRequest: () => {},
+          extractToken: () => {},
           secretOrKey: 'secret',
           verifyJwt: verifyJwtMock,
         },

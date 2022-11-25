@@ -8,18 +8,17 @@ describe('Strategy verify', () => {
   let verifyJwtStub;
   before(() => {
     verifyJwtStub = sinon.stub();
-    verifyJwtStub.callsArgWith(3, null, testData.valid_jwt.payload);
+    verifyJwtStub.resolves(testData.valid_jwt.payload);
   });
 
   describe('Handling a request with a valid JWT and succesful verification', () => {
-    let strategy;
     let user;
     let info;
 
     before((done) => {
-      strategy = new Strategy(
+      const strategy = new Strategy(
         {
-          jwtFromRequest: extractJwt.fromAuthHeaderAsBearerToken(),
+          extractToken: extractJwt.fromAuthHeaderAsBearerToken(),
           secretOrKey: 'secret',
           verifyJwt: verifyJwtStub,
         },
@@ -30,6 +29,7 @@ describe('Strategy verify', () => {
       chai.passport
         .use(strategy)
         .success((u, i) => {
+          console.log(u, i);
           user = u;
           info = i;
           done();
@@ -58,7 +58,7 @@ describe('Strategy verify', () => {
     before((done) => {
       strategy = new Strategy(
         {
-          jwtFromRequest: extractJwt.fromAuthHeaderAsBearerToken(),
+          extractToken: extractJwt.fromAuthHeaderAsBearerToken(),
           secretOrKey: 'secret',
           verifyJwt: verifyJwtStub,
         },
@@ -84,14 +84,16 @@ describe('Strategy verify', () => {
   });
 
   describe('handling a request with a valid jwt and an error during verification', () => {
-    let strategy;
     let err;
 
     before((done) => {
-      strategy = new Strategy(
+      const verifyJwtStub = sinon.stub();
+      verifyJwtStub.resolves(testData.valid_jwt.payload);
+
+      const strategy = new Strategy(
         {
-          jwtFromRequest: extractJwt.fromAuthHeaderAsBearerToken(),
-          secretOrKey: 'secrety',
+          extractToken: extractJwt.fromAuthHeaderAsBearerToken(),
+          secretOrKey: 'secret',
           verifyJwt: verifyJwtStub,
         },
         (jwt_payload, next) =>
@@ -123,7 +125,7 @@ describe('Strategy verify', () => {
     before((done) => {
       strategy = new Strategy(
         {
-          jwtFromRequest: extractJwt.fromAuthHeaderAsBearerToken(),
+          extractToken: extractJwt.fromAuthHeaderAsBearerToken(),
           secretOrKey: 'secret',
           verifyJwt: verifyJwtStub,
         },
@@ -161,7 +163,7 @@ describe('Strategy verify', () => {
           passReqToCallback: true,
           verifyJwt: verifyJwtStub,
           secretOrKey: 'secret',
-          jwtFromRequest: extractJwt.fromAuthHeaderAsBearerToken(),
+          extractToken: extractJwt.fromAuthHeaderAsBearerToken(),
         },
         ({ request }, next) => {
           // Capture the value passed in as the request argument
@@ -188,19 +190,23 @@ describe('Strategy verify', () => {
   });
 
   describe('handling a request when constructed with a secretOrKeyProvider function that succeeds', () => {
-    let strategy;
     let fakeSecretOrKeyProvider;
     let expectedRequest;
+    let verifyJwtStub;
 
     before((done) => {
+      verifyJwtStub = sinon.stub();
+      verifyJwtStub.resolves(testData.valid_jwt.payload);
+
       fakeSecretOrKeyProvider = sinon.spy(() => 'secret from callback');
-      opts = {
-        secretOrKeyProvider: fakeSecretOrKeyProvider,
-        jwtFromRequest: () => 'an undecoded jwt string',
-        verifyJwt: verifyJwtStub,
-      };
-      strategy = new Strategy(opts, (jwtPayload, next) =>
-        next(null, { user_id: 'dont care' }, {})
+
+      const strategy = new Strategy(
+        {
+          secretOrKeyProvider: fakeSecretOrKeyProvider,
+          extractToken: () => 'an undecoded jwt string',
+          verifyJwt: verifyJwtStub,
+        },
+        (jwtPayload, next) => next(null, { user_id: 'dont care' }, {})
       );
 
       chai.passport
@@ -230,14 +236,9 @@ describe('Strategy verify', () => {
     });
 
     it('should call verifyJwt with the value returned from secretOrKeyProvider', () => {
-      expect(
-        verifyJwtStub.calledWith(
-          sinon.match.any,
-          'secret from callback',
-          sinon.match.any,
-          sinon.match.any
-        )
-      ).to.be.true;
+      expect(verifyJwtStub.args[0][0].secretOrKey).to.be.equal(
+        'secret from callback'
+      );
     });
   });
 
@@ -250,7 +251,7 @@ describe('Strategy verify', () => {
       });
       opts = {
         secretOrKeyProvider: fakeSecretOrKeyProvider,
-        jwtFromRequest: (request) => 'an undecoded jwt string',
+        extractToken: (request) => 'an undecoded jwt string',
         verifyJwt: verifyJwtStub,
       };
       strategy = new Strategy(opts, (jwtPayload, next) =>

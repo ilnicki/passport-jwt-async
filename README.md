@@ -35,7 +35,7 @@ extracted from the request or verified.
   which should call `done` with a secret or PEM-encoded public key (asymmetric) for the given key and request combination.
   `done` accepts arguments in the format `function done(err, secret)`. Note it is up to the implementer to decode rawJwtToken.
   REQUIRED unless `secretOrKey` is provided.
-* `jwtFromRequest` (REQUIRED) Function that accepts a request as the only
+* `extractToken` (REQUIRED) Function that accepts a request as the only
   parameter and returns either the JWT as a string or *null*. See
   [Extracting the JWT from the request](#extracting-the-jwt-from-the-request) for
   more details.
@@ -63,7 +63,7 @@ Authorization header with the scheme 'bearer':
 const JwtStrategy = require('passport-jwt').Strategy;
 const ExtractJwt = require('passport-jwt').ExtractJwt;
 const opts = {}
-opts.jwtFromRequest = ExtractJwt.fromAuthHeaderAsBearerToken();
+opts.extractToken = ExtractJwt.fromAuthHeaderAsBearerToken();
 opts.secretOrKey = 'secret';
 opts.issuer = 'accounts.examplesoft.com';
 opts.audience = 'yoursite.net';
@@ -86,7 +86,7 @@ passport.use(new JwtStrategy(opts, function(jwt_payload, done) {
 
 There are a number of ways the JWT may be included in a request.  In order to remain as flexible as
 possible the JWT is parsed from the request by a user-supplied callback passed in as the
-`jwtFromRequest` parameter.  This callback, from now on referred to as an extractor,
+`extractToken` parameter.  This callback, from now on referred to as an extractor,
 accepts a request object as an argument and returns the encoded JWT string or *null*.
 
 #### Included extractors
@@ -111,7 +111,7 @@ functions return a new extractor configured with the given parameters.
 
 If the supplied extractors don't meet your needs you can easily provide your own callback. For
 example, if you are using the cookie-parser middleware and want to extract the JWT in a cookie
-you could use the following function as the argument to the jwtFromRequest option:
+you could use the following function as the argument to the extractToken option:
 
 ```js
 const cookieExtractor = function(req) {
@@ -122,7 +122,7 @@ const cookieExtractor = function(req) {
     return token;
 };
 // ...
-opts.jwtFromRequest = cookieExtractor;
+opts.extractToken = cookieExtractor;
 ```
 
 ### Authenticate requests
