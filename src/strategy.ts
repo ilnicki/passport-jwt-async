@@ -5,9 +5,8 @@ import JwtVerifier from './verify-jwt';
 
 export type SecretOrKeyProvider = (
   request: Request,
-  rawJwtToken: string,
-  done: (error: unknown, secretOrKey: string | Buffer) => void
-) => void;
+  rawJwtToken: string
+) => string | Buffer | Promise<string | Buffer>;
 
 export type VerifyCallback = (
   result: {
@@ -114,9 +113,7 @@ export class JwtStrategy extends Strategy {
           'JwtStrategy has been given both a secretOrKey and a secretOrKeyProvider'
         );
       }
-      this.secretOrKeyProvider = (request, rawJwtToken, done) => {
-        done(null, secretOrKey);
-      };
+      this.secretOrKeyProvider = () => secretOrKey;
     }
 
     if (!this.secretOrKeyProvider) {
@@ -144,47 +141,42 @@ export class JwtStrategy extends Strategy {
       return this.fail(new Error('No auth token'), 401);
     }
 
-    this.secretOrKeyProvider(
-      request,
-      token,
-      (secretOrKeyError, secretOrKey) => {
-        if (secretOrKeyError) {
-          this.fail(secretOrKeyError, 401);
-        } else {
-          // Verify the JWT
-          this.verifyJwt(
-            token,
-            secretOrKey,
-            this.verifyJwtOptions,
-            (jwtError, payload) => {
-              if (jwtError) {
-                return this.fail(jwtError);
-              } else {
-                // Pass the parsed token to the user
-                const verified = (err, user, info) => {
-                  if (err) {
-                    return this.error(err);
-                  } else if (!user) {
-                    return this.fail(info);
-                  } else {
-                    return this.success(user, info);
-                  }
-                };
+    try {
+      const secretOrKey = await this.secretOrKeyProvider(request, token);
 
-                try {
-                  if (this.passReqToCallback) {
-                    this.verify({ request, payload }, verified);
-                  } else {
-                    this.verify({ payload }, verified);
-                  }
-                } catch (ex) {
-                  this.error(ex);
-                }
+      this.verifyJwt(
+        token,
+        secretOrKey,
+        this.verifyJwtOptions,
+        (jwtError, payload) => {
+          if (jwtError) {
+            return this.fail(jwtError);
+          } else {
+            // Pass the parsed token to the user
+            const verified = (err, user, info) => {
+              if (err) {
+                return this.error(err);
+              } else if (!user) {
+                return this.fail(info);
+              } else {
+                return this.success(user, info);
               }
+            };
+
+            try {
+              if (this.passReqToCallback) {
+                this.verify({ request, payload }, verified);
+              } else {
+                this.verify({ payload }, verified);
+              }
+            } catch (ex) {
+              this.error(ex);
             }
-          );
+          }
         }
-      }
-    );
+      );
+    } catch (secretOrKeyError) {
+      this.fail(secretOrKeyError, 401);
+    }
   }
 }

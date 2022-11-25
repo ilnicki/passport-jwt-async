@@ -190,15 +190,13 @@ describe('Strategy verify', () => {
   describe('handling a request when constructed with a secretOrKeyProvider function that succeeds', () => {
     let strategy;
     let fakeSecretOrKeyProvider;
-    let expectedReqeust;
+    let expectedRequest;
 
     before((done) => {
-      fakeSecretOrKeyProvider = sinon.spy((request, token, done) => {
-        done(null, 'secret from callback');
-      });
+      fakeSecretOrKeyProvider = sinon.spy(() => 'secret from callback');
       opts = {
         secretOrKeyProvider: fakeSecretOrKeyProvider,
-        jwtFromRequest: (request) => 'an undecoded jwt string',
+        jwtFromRequest: () => 'an undecoded jwt string',
         verifyJwt: verifyJwtStub,
       };
       strategy = new Strategy(opts, (jwtPayload, next) =>
@@ -211,18 +209,14 @@ describe('Strategy verify', () => {
           done();
         })
         .req((req) => {
-          expectedReqeust = req;
+          expectedRequest = req;
         })
         .authenticate();
     });
 
     it('should call the fake secret or key provider with the reqeust', () => {
       expect(
-        fakeSecretOrKeyProvider.calledWith(
-          expectedReqeust,
-          sinon.match.any,
-          sinon.match.any
-        )
+        fakeSecretOrKeyProvider.calledWith(expectedRequest, sinon.match.any)
       ).to.be.true;
     });
 
@@ -230,8 +224,7 @@ describe('Strategy verify', () => {
       expect(
         fakeSecretOrKeyProvider.calledWith(
           sinon.match.any,
-          'an undecoded jwt string',
-          sinon.match.any
+          'an undecoded jwt string'
         )
       ).to.be.true;
     });
@@ -252,8 +245,8 @@ describe('Strategy verify', () => {
     let errorMessage;
 
     before((done) => {
-      fakeSecretOrKeyProvider = sinon.spy((request, token, done) => {
-        done('Error occurred looking for the secret');
+      fakeSecretOrKeyProvider = sinon.spy(() => {
+        throw 'Error occurred looking for the secret';
       });
       opts = {
         secretOrKeyProvider: fakeSecretOrKeyProvider,

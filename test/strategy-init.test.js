@@ -29,7 +29,7 @@ describe('Strategy init', () => {
     expect(() => {
       new Strategy({
         secretOrKey: 'secret',
-        secretOrKeyProvider: () => {},
+        secretOrKeyProvider: () => 'secret',
         jwtFromRequest: () => {},
       });
     }).to.throw(TypeError);
