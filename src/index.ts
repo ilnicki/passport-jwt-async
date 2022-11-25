@@ -1,2 +1,15 @@
-export { JwtStrategy as Strategy } from './strategy';
-export * as ExtractJwt from './extract-jwt';
+export {
+  JwtStrategy as Strategy,
+  JwtStrategyOptions,
+  SecretOrKeyProvider,
+  VerifyCallback,
+} from './strategy';
+export {
+  TokenExtractor,
+  fromAuthHeaderAsBearerToken,
+  fromAuthHeaderWithScheme,
+  fromBodyField,
+  fromExtractors,
+  fromHeader,
+  fromUrlQueryParameter,
+} from './extract-jwt';

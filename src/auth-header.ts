@@ -1,6 +1,11 @@
 const HEADER_SCHEME = /(\S+)\s+(\S+)/;
 
-export const parse = (header) => {
+export interface ParsedAuthHeader {
+  scheme: string;
+  value: string;
+}
+
+export const parse = (header: string): ParsedAuthHeader | null => {
   if (typeof header !== 'string') {
     return null;
   }

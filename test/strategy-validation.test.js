@@ -16,18 +16,20 @@ describe('Strategy validation', () => {
       verifyJwtStub = sinon.stub();
       verifyJwtStub.callsArgWith(3, null, test_data.valid_jwt.payload);
 
-      const options = {};
-      options.issuer = 'TestIssuer';
-      options.audience = 'TestAudience';
-      options.secretOrKey = 'secret';
-      options.algorithms = ['HS256', 'HS384'];
-      options.ignoreExpiration = false;
-      options.verifyJwt = verifyJwtStub;
-      options.jsonWebTokenOptions = {
-        clockTolerance: 10,
-        maxAge: '1h',
+      const options = {
+        secretOrKey: 'secret',
+        verifyJwt: verifyJwtStub,
+        verifyJwtOptions: {
+          algorithms: ['HS256', 'HS384'],
+          issuer: 'TestIssuer',
+          audience: 'TestAudience',
+          clockTolerance: 10,
+          maxAge: '1h',
+          ignoreExpiration: false,
+        },
+        jwtFromRequest: extractJwt.fromAuthHeaderAsBearerToken(),
       };
-      options.jwtFromRequest = extractJwt.fromAuthHeaderAsBearerToken();
+
       strategy = new Strategy(options, verifyStub);
 
       chai.passport
@@ -88,8 +90,8 @@ describe('Strategy validation', () => {
           secretOrKey: 'secret',
           verifyJwt: verifyJwtStub,
         },
-        (jwt_payload, next) => {
-          payload = jwt_payload;
+        ({ payload: jwtPayload }, next) => {
+          payload = jwtPayload;
           next(null, {}, {});
         }
       );

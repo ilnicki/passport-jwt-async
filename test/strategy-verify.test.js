@@ -156,18 +156,23 @@ describe('Strategy verify', () => {
     let request_arg;
 
     before((done) => {
-      opts = { passReqToCallback: true, verifyJwt: verifyJwtStub };
-      opts.secretOrKey = 'secret';
-      opts.jwtFromRequest = extractJwt.fromAuthHeaderAsBearerToken();
-      strategy = new Strategy(opts, (request, jwt_payload, next) => {
-        // Capture the value passed in as the request argument
-        request_arg = request;
-        return next(null, { user_id: 1234567890 }, { foo: 'bar' });
-      });
+      strategy = new Strategy(
+        {
+          passReqToCallback: true,
+          verifyJwt: verifyJwtStub,
+          secretOrKey: 'secret',
+          jwtFromRequest: extractJwt.fromAuthHeaderAsBearerToken(),
+        },
+        ({ request }, next) => {
+          // Capture the value passed in as the request argument
+          request_arg = request;
+          return next(null, { user_id: 1234567890 }, { foo: 'bar' });
+        }
+      );
 
       chai.passport
         .use(strategy)
-        .success((u, i) => {
+        .success(() => {
           done();
         })
         .req((req) => {

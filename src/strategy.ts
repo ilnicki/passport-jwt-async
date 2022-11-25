@@ -1,130 +1,190 @@
+import { Request } from 'express';
 import { Strategy } from 'passport-strategy';
+import { TokenExtractor } from './extract-jwt';
 import JwtVerifier from './verify-jwt';
+
+export type SecretOrKeyProvider = (
+  request: Request,
+  rawJwtToken: string,
+  done: (error: unknown, secretOrKey: string | Buffer) => void
+) => void;
+
+export type VerifyCallback = (
+  result: {
+    payload: any;
+    request?: Request;
+  },
+  done: (err: unknown, user, info) => void
+) => void;
+
+export interface JwtStrategyOptions {
+  /**
+   * String or buffer containing the secret or PEM-encoded public key.
+   * Required unless secretOrKeyProvider is provided.
+   */
+  secretOrKey: string | Buffer;
+
+  /**
+   * Callback in the format secretOrKeyProvider(request, rawJwtToken, done)`,
+   * which should call done with a secret or PEM-encoded public key
+   * (asymmetric) for the given undecoded jwt token string and  request
+   * combination. done has the signature function done(err, secret).
+   * REQUIRED unless `secretOrKey` is provided.
+   */
+  secretOrKeyProvider: SecretOrKeyProvider;
+
+  /**
+   * Function that accepts a request as the only parameter and returns
+   * the either JWT as a string or null
+   */
+  jwtFromRequest: any;
+
+  /**
+   * If defined issuer will be verified against this value
+   */
+  issuer: string;
+
+  /**
+   * If defined audience will be verified against this value
+   */
+  audience: string;
+
+  /**
+   * List of strings with the names of the allowed algorithms. For instance, ["HS256", "HS384"].
+   */
+  algorithms: string[];
+
+  /**
+   * If true do not validate the expiration of the token.
+   */
+  ignoreExpiration: boolean;
+
+  /**
+   * If true the verify callback will be called with args (request, jwt_payload, done_callback).
+   */
+  passReqToCallback: boolean;
+
+  verifyJwt: any;
+
+  verifyJwtOptions: any;
+}
 
 /**
  * Strategy constructor
  *
  * @param options
- *          secretOrKey: String or buffer containing the secret or PEM-encoded public key. Required unless secretOrKeyProvider is provided.
- *          secretOrKeyProvider: callback in the format secretOrKeyProvider(request, rawJwtToken, done)`,
- *                               which should call done with a secret or PEM-encoded public key
- *                               (asymmetric) for the given undecoded jwt token string and  request
- *                               combination. done has the signature function done(err, secret).
- *                               REQUIRED unless `secretOrKey` is provided.
- *          jwtFromRequest: (REQUIRED) Function that accepts a request as the only parameter and returns the either JWT as a string or null
- *          issuer: If defined issuer will be verified against this value
- *          audience: If defined audience will be verified against this value
- *          algorithms: List of strings with the names of the allowed algorithms. For instance, ["HS256", "HS384"].
- *          ignoreExpiration: if true do not validate the expiration of the token.
- *          passReqToCallback: If true the verify callback will be called with args (request, jwt_payload, done_callback).
+ *
  * @param verify - Verify callback with args (jwt_payload, done_callback) if passReqToCallback is false,
  *                 (request, jwt_payload, done_callback) if true.
  */
 export class JwtStrategy extends Strategy {
   private verifyJwt: any;
-  private _secretOrKeyProvider: any;
-  private _verify: any;
-  private _jwtFromRequest: any;
-  private _passReqToCallback: any;
-  private _verifOpts: any;
+  private verifyJwtOptions: any;
 
-  public name: string;
+  private secretOrKeyProvider: SecretOrKeyProvider;
+  private jwtFromRequest: TokenExtractor;
+  private passReqToCallback: boolean;
 
-  constructor(options, verify) {
+  public name = 'jwt';
+
+  constructor(
+    {
+      verifyJwt = JwtVerifier,
+      secretOrKeyProvider,
+      secretOrKey,
+      passReqToCallback = false,
+      verifyJwtOptions = {},
+      jwtFromRequest,
+    }: JwtStrategyOptions,
+    private readonly verify: VerifyCallback
+  ) {
     super();
 
-    this.name = 'jwt';
-    this.verifyJwt = options.verifyJwt ?? JwtVerifier;
+    if (!this.verify) {
+      throw new TypeError('JwtStrategy requires a verify callback');
+    }
 
-    this._secretOrKeyProvider = options.secretOrKeyProvider;
+    this.verifyJwt = verifyJwt;
 
-    if (options.secretOrKey) {
-      if (this._secretOrKeyProvider) {
+    this.secretOrKeyProvider = secretOrKeyProvider;
+
+    if (secretOrKey) {
+      if (this.secretOrKeyProvider) {
         throw new TypeError(
           'JwtStrategy has been given both a secretOrKey and a secretOrKeyProvider'
         );
       }
-      this._secretOrKeyProvider = (request, rawJwtToken, done) => {
-        done(null, options.secretOrKey);
+      this.secretOrKeyProvider = (request, rawJwtToken, done) => {
+        done(null, secretOrKey);
       };
     }
 
-    if (!this._secretOrKeyProvider) {
+    if (!this.secretOrKeyProvider) {
       throw new TypeError('JwtStrategy requires a secret or key');
     }
 
-    this._verify = verify;
-    if (!this._verify) {
-      throw new TypeError('JwtStrategy requires a verify callback');
-    }
-
-    this._jwtFromRequest = options.jwtFromRequest;
-    if (!this._jwtFromRequest) {
+    this.jwtFromRequest = jwtFromRequest;
+    if (!this.jwtFromRequest) {
       throw new TypeError(
         'JwtStrategy requires a function to retrieve jwt from requests (see option jwtFromRequest)'
       );
     }
 
-    this._passReqToCallback = options.passReqToCallback;
-    const jsonWebTokenOptions = options.jsonWebTokenOptions || {};
-    //for backwards compatibility, still allowing you to pass
-    //audience / issuer / algorithms / ignoreExpiration
-    //on the options.
-    this._verifOpts = Object.assign({}, jsonWebTokenOptions, {
-      audience: options.audience,
-      issuer: options.issuer,
-      algorithms: options.algorithms,
-      ignoreExpiration: !!options.ignoreExpiration,
-    });
+    this.passReqToCallback = passReqToCallback;
+    this.verifyJwtOptions = verifyJwtOptions;
   }
 
   /**
    * Authenticate request based on JWT obtained from header or post body
    */
-  public authenticate(req, options) {
-    const token = this._jwtFromRequest(req);
+  public async authenticate(request: Request, options): Promise<void> {
+    const token = this.jwtFromRequest(request);
 
     if (!token) {
       return this.fail(new Error('No auth token'), 401);
     }
 
-    this._secretOrKeyProvider(req, token, (secretOrKeyError, secretOrKey) => {
-      if (secretOrKeyError) {
-        this.fail(secretOrKeyError);
-      } else {
-        // Verify the JWT
-        this.verifyJwt(
-          token,
-          secretOrKey,
-          this._verifOpts,
-          (jwt_err, payload) => {
-            if (jwt_err) {
-              return this.fail(jwt_err);
-            } else {
-              // Pass the parsed token to the user
-              const verified = (err, user, info) => {
-                if (err) {
-                  return this.error(err);
-                } else if (!user) {
-                  return this.fail(info);
-                } else {
-                  return this.success(user, info);
-                }
-              };
+    this.secretOrKeyProvider(
+      request,
+      token,
+      (secretOrKeyError, secretOrKey) => {
+        if (secretOrKeyError) {
+          this.fail(secretOrKeyError, 401);
+        } else {
+          // Verify the JWT
+          this.verifyJwt(
+            token,
+            secretOrKey,
+            this.verifyJwtOptions,
+            (jwtError, payload) => {
+              if (jwtError) {
+                return this.fail(jwtError);
+              } else {
+                // Pass the parsed token to the user
+                const verified = (err, user, info) => {
+                  if (err) {
+                    return this.error(err);
+                  } else if (!user) {
+                    return this.fail(info);
+                  } else {
+                    return this.success(user, info);
+                  }
+                };
 
-              try {
-                if (this._passReqToCallback) {
-                  this._verify(req, payload, verified);
-                } else {
-                  this._verify(payload, verified);
+                try {
+                  if (this.passReqToCallback) {
+                    this.verify({ request, payload }, verified);
+                  } else {
+                    this.verify({ payload }, verified);
+                  }
+                } catch (ex) {
+                  this.error(ex);
                 }
-              } catch (ex) {
-                this.error(ex);
               }
             }
-          }
-        );
+          );
+        }
       }
-    });
+    );
   }
 }
