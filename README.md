@@ -1,21 +1,14 @@
 # passport-jwt
 
-[![Build Status](https://travis-ci.org/mikenicholson/passport-jwt.svg?branch=master)](https://travis-ci.org/mikenicholson/passport-jwt)
-[![Code Climate](https://codeclimate.com/github/mikenicholson/passport-jwt/badges/gpa.svg)](https://codeclimate.com/github/mikenicholson/passport-jwt)
-
 A [Passport](http://passportjs.org/) strategy for authenticating with a
 [JSON Web Token](http://jwt.io).
 
 This module lets you authenticate endpoints using a JSON web token. It is
 intended to be used to secure RESTful endpoints without sessions.
 
-## Supported By
-
-If you want to quickly add secure token-based authentication to Node.js apps, feel free to check out Auth0's Node.js SDK and free plan at [auth0.com/developers](https://auth0.com/developers?utm_source=GHsponsor&utm_medium=GHsponsor&utm_campaign=passport-jwt&utm_content=auth) <img alt='Auth0 Logo' src='https://s3.amazonaws.com/passport-jwt-img/Auth0+logo.svg'/>
-
 ## Install
 
-    npm install passport-jwt
+    npm install passport-jwt-async
 
 ## Usage
 
@@ -28,12 +21,11 @@ The JWT authentication strategy is constructed as follows:
 `options` is an object literal containing options to control how the token is
 extracted from the request or verified.
 
-* `secretOrKey` is a string or buffer containing the secret
-  (symmetric) or PEM-encoded public key (asymmetric) for verifying the token's
+* `secretOrKey` is a string or buffer containing the secret (symmetric)
+  or PEM-encoded public key (asymmetric) for verifying the token's
   signature. REQUIRED unless `secretOrKeyProvider` is provided.
-* `secretOrKeyProvider` is a callback in the format `function secretOrKeyProvider(request, rawJwtToken, done)`,
-  which should call `done` with a secret or PEM-encoded public key (asymmetric) for the given key and request combination.
-  `done` accepts arguments in the format `function done(err, secret)`. Note it is up to the implementer to decode rawJwtToken.
+* `secretOrKeyProvider` is a function which should return a secret or PEM-encoded public 
+  key (asymmetric) for the given key and request combination. Note it is up to the implementer to decode rawJwtToken.
   REQUIRED unless `secretOrKey` is provided.
 * `extractToken` (REQUIRED) Function that accepts a request as the only
   parameter and returns either the JWT as a string or *null*. See
@@ -145,11 +137,6 @@ extractor, you would include an `Authorization` header in your request with the
 scheme set to `bearer`. e.g.
 
     Authorization: bearer JSON_WEB_TOKEN_STRING.....
-
-## Migrating
-
-Read the [Migration Guide](docs/migrating.md) for help upgrading to the latest
-major version of passport-jwt.
 
 ## Tests
 
