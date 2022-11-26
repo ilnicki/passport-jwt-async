@@ -1,16 +1,16 @@
 {
-  "name": "passport-jwt-ts",
+  "name": "passport-jwt-async",
   "version": "1.0.0",
   "description": "Passport authentication strategy using JSON Web Tokens",
   "main": "./lib",
   "scripts": {
-    "build": "tsc",
+    "build": "rimraf ./lib && tsc",
     "test": "mocha --reporter spec -r ts-node/register test/**/*.test.ts",
     "test:cov": "nyc npm run test"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/ilnicki/passport-jwt-ts.git"
+    "url": "https://github.com/ilnicki/passport-jwt-async.git"
   },
   "keywords": [
     "Passport",
@@ -30,9 +30,9 @@
   ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/ilnicki/passport-jwt-ts/issues"
+    "url": "https://github.com/ilnicki/passport-jwt-async/issues"
   },
-  "homepage": "https://github.com/ilnicki/passport-jwt-ts",
+  "homepage": "https://github.com/ilnicki/passport-jwt-async",
   "devDependencies": {
     "@types/chai": "^4.3.4",
     "@types/express": "^4.17.14",
@@ -45,6 +45,7 @@
     "chai-passport-strategy": "^1.0.0",
     "mocha": "^10.1.0",
     "nyc": "^15.1.0",
+    "rimraf": "^3.0.2",
     "sinon": "^14.0.2",
     "ts-node": "^10.9.1",
     "typescript": "^4.9.3"

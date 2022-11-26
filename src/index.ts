@@ -3,6 +3,7 @@ export {
   JwtStrategyOptions,
   SecretOrKeyProvider,
   VerifyCallback,
+  JwtVerifier,
 } from './strategy';
 export {
   TokenExtractor,
