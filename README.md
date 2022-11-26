@@ -1,4 +1,4 @@
-# passport-jwt
+# passport-jwt-async
 
 A [Passport](http://passportjs.org/) strategy for authenticating with a
 [JSON Web Token](http://jwt.io).
@@ -31,12 +31,6 @@ extracted from the request or verified.
   parameter and returns either the JWT as a string or *null*. See
   [Extracting the JWT from the request](#extracting-the-jwt-from-the-request) for
   more details.
-* `issuer`: If defined the token issuer (iss) will be verified against this
-  value.
-* `audience`: If defined, the token audience (aud) will be verified against
-  this value.
-* `algorithms`: List of strings with the names of the allowed algorithms. For instance, ["HS256", "HS384"].
-* `ignoreExpiration`: if true do not validate the expiration of the token.
 * `passReqToCallback`: If true the request will be passed to the verify
   callback. i.e. verify(request, jwt_payload, done_callback).
 * `verifyJwtOptions`: passport-jwt is verifying the token using [jsonwebtoken](https://github.com/auth0/node-jsonwebtoken).
@@ -51,16 +45,18 @@ Pass here an options object for any other option you can pass the jsonwebtoken v
 An example configuration which reads the JWT from the http
 Authorization header with the scheme 'bearer':
 
-```js
-const JwtStrategy = require('passport-jwt').Strategy;
-const ExtractJwt = require('passport-jwt').ExtractJwt;
-const opts = {}
-opts.extractToken = ExtractJwt.fromAuthHeaderAsBearerToken();
-opts.secretOrKey = 'secret';
-opts.issuer = 'accounts.examplesoft.com';
-opts.audience = 'yoursite.net';
-passport.use(new JwtStrategy(opts, function(jwt_payload, done) {
-    User.findOne({id: jwt_payload.sub}, function(err, user) {
+```ts
+import {Strategy as JwtStrategy, fromAuthHeaderAsBearerToken} from 'passport-jwt';
+
+passport.use(new JwtStrategy({
+    extractToken: fromAuthHeaderAsBearerToken(),
+    secretOrKey: 'secret',
+    verifyJwtOptions: {
+      issuer: 'accounts.examplesoft.com',
+      audience: 'yoursite.net'
+    }
+  }, function({sub}, done) {
+    User.findOne({id: sub}, function(err, user) {
         if (err) {
             return done(err, false);
         }
@@ -86,17 +82,17 @@ accepts a request object as an argument and returns the encoded JWT string or *n
 A number of extractor factory functions are provided in passport-jwt.ExtractJwt. These factory
 functions return a new extractor configured with the given parameters.
 
-* ```fromHeader(header_name)``` creates a new extractor that looks for the JWT in the given http
+* ```fromHeader(headerName: string)``` creates a new extractor that looks for the JWT in the given http
   header
-* ```fromBodyField(field_name)``` creates a new extractor that looks for the JWT in the given body
+* ```fromBodyField(fieldName: string)``` creates a new extractor that looks for the JWT in the given body
   field.  You must have a body parser configured in order to use this method.
-* ```fromUrlQueryParameter(param_name)``` creates a new extractor that looks for the JWT in the given
+* ```fromUrlQueryParameter(paramName: string)``` creates a new extractor that looks for the JWT in the given
   URL query parameter.
-* ```fromAuthHeaderWithScheme(auth_scheme)``` creates a new extractor that looks for the JWT in the
+* ```fromAuthHeaderWithScheme(authScheme: string)``` creates a new extractor that looks for the JWT in the
   authorization header, expecting the scheme to match auth_scheme.
 * ```fromAuthHeaderAsBearerToken()``` creates a new extractor that looks for the JWT in the authorization header
   with the scheme 'bearer'
-* ```fromExtractors([array of extractor functions])``` creates a new extractor using an array of
+* ```fromExtractors(extractors: TokenExtractor[])``` creates a new extractor using an array of
   extractors provided. Each extractor is attempted in order until one returns a token.
 
 ### Writing a custom extractor function
@@ -105,8 +101,8 @@ If the supplied extractors don't meet your needs you can easily provide your own
 example, if you are using the cookie-parser middleware and want to extract the JWT in a cookie
 you could use the following function as the argument to the extractToken option:
 
-```js
-const cookieExtractor = function(req) {
+```ts
+const cookieExtractor = (req) => {
     const token = null;
     if (req && req.cookies) {
         token = req.cookies['jwt'];
@@ -121,7 +117,7 @@ opts.extractToken = cookieExtractor;
 
 Use `passport.authenticate()` specifying `'JWT'` as the strategy.
 
-```js
+```ts
 app.post('/profile', passport.authenticate('jwt', { session: false }),
     function(req, res) {
         res.send(req.user.profile);
