@@ -9,7 +9,7 @@ import {
   fromExtractors,
   fromHeader,
   fromUrlQueryParameter,
-} from '../lib/extract-jwt';
+} from '../src/extract-jwt';
 
 const requestWith = (overrides: Partial<Request>): Request =>
   ({
