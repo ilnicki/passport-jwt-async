@@ -2,7 +2,7 @@ import { Request } from 'express';
 import * as url from 'url';
 import { parse } from './auth-header';
 
-export type TokenExtractor = (request: Request) => string;
+export type TokenExtractor = (request: Request) => string | null;
 
 // Note: express http converts all headers to lower case.
 const AUTH_HEADER = 'authorization';

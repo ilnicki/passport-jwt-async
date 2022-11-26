@@ -14,7 +14,7 @@ export type VerifyCallback = (
     payload: any;
     request?: Request;
   },
-  done: (err: Error, user: any, info?: any) => void
+  done: (err: Error | null, user?: any, info?: any) => void
 ) => void;
 
 export type JwtVerifier = (params: {
@@ -28,16 +28,16 @@ export interface JwtStrategyOptions {
    * String or buffer containing the secret or PEM-encoded public key.
    * Required unless secretOrKeyProvider is provided.
    */
-  secretOrKey: string | Buffer;
+  secretOrKey?: string | Buffer;
 
   /**
-   * Callback in the format secretOrKeyProvider(request, rawJwtToken, done)`,
+   * Callback in the format secretOrKeyProvider(request, rawJwtToken)`,
    * which should call done with a secret or PEM-encoded public key
    * (asymmetric) for the given undecoded jwt token string and  request
    * combination. done has the signature function done(err, secret).
    * REQUIRED unless `secretOrKey` is provided.
    */
-  secretOrKeyProvider: SecretOrKeyProvider;
+  secretOrKeyProvider?: SecretOrKeyProvider;
 
   /**
    * Function that accepts a request as the only parameter and returns
@@ -46,43 +46,42 @@ export interface JwtStrategyOptions {
   extractToken: TokenExtractor;
 
   /**
-   * If defined issuer will be verified against this value
-   */
-  issuer: string;
-
-  /**
-   * If defined audience will be verified against this value
-   */
-  audience: string;
-
-  /**
-   * List of strings with the names of the allowed algorithms. For instance, ["HS256", "HS384"].
-   */
-  algorithms: string[];
-
-  /**
-   * If true do not validate the expiration of the token.
-   */
-  ignoreExpiration: boolean;
-
-  /**
    * If true the verify callback will be called with args (request, jwt_payload, done_callback).
    */
-  passReqToCallback: boolean;
+  passReqToCallback?: boolean;
 
-  verifyJwt: JwtVerifier;
+  /**
+   *
+   */
+  verifyJwt?: JwtVerifier;
 
-  verifyJwtOptions: any;
+  verifyJwtOptions?: {
+    /**
+     * If defined issuer will be verified against this value
+     */
+    issuer?: string;
+
+    /**
+     * If defined audience will be verified against this value
+     */
+    audience?: string;
+
+    /**
+     * List of strings with the names of the allowed algorithms. For instance, ["HS256", "HS384"].
+     */
+    algorithms?: string[];
+
+    /**
+     * If true do not validate the expiration of the token.
+     */
+    ignoreExpiration?: boolean;
+
+    clockTolerance?: number;
+
+    maxAge?: string;
+  };
 }
 
-/**
- * Strategy constructor
- *
- * @param options
- *
- * @param verify - Verify callback with args (jwt_payload, done_callback) if passReqToCallback is false,
- *                 (request, jwt_payload, done_callback) if true.
- */
 export class JwtStrategy extends Strategy {
   private verifyJwt: JwtVerifier;
   private verifyJwtOptions: object;
