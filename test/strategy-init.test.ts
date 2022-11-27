@@ -42,23 +42,6 @@ describe('Strategy init', () => {
     }).to.throw(TypeError, 'JwtStrategy requires a token verifier');
   });
 
-  it('should throw if constructed with both a secretOrKey and a secretOrKeyProvider', () => {
-    expect(() => {
-      new Strategy(
-        {
-          secretOrKey: 'secret',
-          secretOrKeyProvider: () => 'secret',
-          verifyJwt: jsonWebTokenVerifier,
-          extractToken: () => null,
-        },
-        () => null
-      );
-    }).to.throw(
-      TypeError,
-      'JwtStrategy has been given both a secretOrKey and a secretOrKeyProvider'
-    );
-  });
-
   it('should throw if constructed without a extractToken arg', () => {
     expect(() => {
       new Strategy(

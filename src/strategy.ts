@@ -92,12 +92,7 @@ export class JwtStrategy<T extends object = any> extends Strategy {
     }
 
     this.secretOrKeyProvider = secretOrKeyProvider;
-    if (secretOrKey) {
-      if (this.secretOrKeyProvider) {
-        throw new TypeError(
-          'JwtStrategy has been given both a secretOrKey and a secretOrKeyProvider'
-        );
-      }
+    if (!this.secretOrKeyProvider) {
       this.secretOrKeyProvider = () => secretOrKey;
     }
 
