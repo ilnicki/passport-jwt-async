@@ -1,11 +1,10 @@
-import { JwtPayload, verify } from 'jsonwebtoken';
-import type { JwtVerifier } from './strategy';
+import { verify, VerifyOptions } from 'jsonwebtoken';
+import { JwtPayload } from './jwt-payload';
+import { JwtVerifier } from './strategy';
 
-export const auth0JwtVerifier: JwtVerifier = ({
-  token,
-  secretOrKey,
-  options,
-}) =>
+export const jsonWebTokenVerifier: JwtVerifier<
+  Exclude<VerifyOptions, 'complete'>
+> = ({ token, secretOrKey, options = {} }) =>
   new Promise((resolve, reject) => {
     verify(
       token,

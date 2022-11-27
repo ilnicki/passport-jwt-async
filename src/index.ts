@@ -14,3 +14,5 @@ export {
   fromHeader,
   fromUrlQueryParameter,
 } from './extract-jwt';
+export { JwtPayload } from './jwt-payload';
+export { jsonWebTokenVerifier } from './json-web-token-verifier';

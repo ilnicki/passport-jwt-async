@@ -6,6 +6,7 @@ import { use } from './chai-passport-strategy';
 import { JwtStrategy as Strategy } from '../src/strategy';
 import * as testData from './testdata';
 import { fromAuthHeaderAsBearerToken } from '../src/extract-jwt';
+import { jsonWebTokenVerifier } from '../src/json-web-token-verifier';
 
 describe('Strategy validation', () => {
   describe('calling JWT validation function', () => {
@@ -134,6 +135,7 @@ describe('Strategy validation', () => {
         {
           extractToken: fromAuthHeaderAsBearerToken(),
           secretOrKey: 'secret',
+          verifyJwt: jsonWebTokenVerifier,
         },
         verifySpy
       );

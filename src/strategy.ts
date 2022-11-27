@@ -1,8 +1,7 @@
 import { Request } from 'express';
-import { JwtPayload } from 'jsonwebtoken';
 import { Strategy } from 'passport-strategy';
 import { TokenExtractor } from './extract-jwt';
-import { auth0JwtVerifier } from './verify-jwt';
+import { JwtPayload } from './jwt-payload';
 
 export type SecretOrKeyProvider = (
   request: Request,
@@ -17,13 +16,13 @@ export type VerifyCallback = (
   done: (err: Error | null, user?: any, info?: any) => void
 ) => void;
 
-export type JwtVerifier = (params: {
+export type JwtVerifier<T extends object> = (params: {
   token: string;
   secretOrKey: string | Buffer;
-  options: object;
+  options: T;
 }) => Promise<JwtPayload>;
 
-export interface JwtStrategyOptions {
+export interface JwtStrategyOptions<T extends object> {
   /**
    * String or buffer containing the secret or PEM-encoded public key.
    * Required unless secretOrKeyProvider is provided.
@@ -51,40 +50,16 @@ export interface JwtStrategyOptions {
   passReqToCallback?: boolean;
 
   /**
-   *
+   * A function to verify and decode token body.
    */
-  verifyJwt?: JwtVerifier;
+  verifyJwt?: JwtVerifier<T>;
 
-  verifyJwtOptions?: {
-    /**
-     * If defined issuer will be verified against this value
-     */
-    issuer?: string;
-
-    /**
-     * If defined audience will be verified against this value
-     */
-    audience?: string;
-
-    /**
-     * List of strings with the names of the allowed algorithms. For instance, ["HS256", "HS384"].
-     */
-    algorithms?: string[];
-
-    /**
-     * If true do not validate the expiration of the token.
-     */
-    ignoreExpiration?: boolean;
-
-    clockTolerance?: number;
-
-    maxAge?: string;
-  };
+  verifyJwtOptions?: T;
 }
 
-export class JwtStrategy extends Strategy {
-  private verifyJwt: JwtVerifier;
-  private verifyJwtOptions: object;
+export class JwtStrategy<T extends object = any> extends Strategy {
+  private verifyJwt: JwtVerifier<T>;
+  private verifyJwtOptions: T;
 
   private secretOrKeyProvider: SecretOrKeyProvider;
   private extractToken: TokenExtractor;
@@ -94,25 +69,29 @@ export class JwtStrategy extends Strategy {
 
   constructor(
     {
-      verifyJwt = auth0JwtVerifier,
+      verifyJwt,
       secretOrKeyProvider,
       secretOrKey,
       passReqToCallback = false,
-      verifyJwtOptions = {},
+      verifyJwtOptions,
       extractToken,
-    }: JwtStrategyOptions,
+    }: JwtStrategyOptions<T>,
     private readonly verify: VerifyCallback
   ) {
     super();
 
+    this.passReqToCallback = passReqToCallback;
     if (!this.verify) {
       throw new TypeError('JwtStrategy requires a verify callback');
     }
 
     this.verifyJwt = verifyJwt;
+    this.verifyJwtOptions = verifyJwtOptions;
+    if (!this.verifyJwt) {
+      throw new TypeError('JwtStrategy requires a token verifier');
+    }
 
     this.secretOrKeyProvider = secretOrKeyProvider;
-
     if (secretOrKey) {
       if (this.secretOrKeyProvider) {
         throw new TypeError(
@@ -122,19 +101,10 @@ export class JwtStrategy extends Strategy {
       this.secretOrKeyProvider = () => secretOrKey;
     }
 
-    if (!this.secretOrKeyProvider) {
-      throw new TypeError('JwtStrategy requires a secret or key');
-    }
-
     this.extractToken = extractToken;
     if (!this.extractToken) {
-      throw new TypeError(
-        'JwtStrategy requires a function to retrieve jwt from requests (see option extractToken)'
-      );
+      throw new TypeError('JwtStrategy requires a jwt token extractor');
     }
-
-    this.passReqToCallback = passReqToCallback;
-    this.verifyJwtOptions = verifyJwtOptions;
   }
 
   private async verifyAsync(
