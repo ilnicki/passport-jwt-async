@@ -19,26 +19,22 @@ The JWT authentication strategy is constructed as follows:
     new JwtStrategy(options, verify)
 
 `options` is an object literal containing options to control how the token is
-extracted from the request or verified.
+extracted from the request and verified.
 
-* `secretOrKey` is a string or buffer containing the secret (symmetric)
-  or PEM-encoded public key (asymmetric) for verifying the token's
-  signature. REQUIRED unless `secretOrKeyProvider` is provided.
-* `secretOrKeyProvider` is a function which should return a secret or PEM-encoded public 
-  key (asymmetric) for the given key and request combination. Note it is up to the implementer to decode rawJwtToken.
-  REQUIRED unless `secretOrKey` is provided.
-* `extractToken` (REQUIRED) Function that accepts a request as the only
-  parameter and returns either the JWT as a string or *null*. See
-  [Extracting the JWT from the request](#extracting-the-jwt-from-the-request) for
-  more details.
+* `secretOrKey` is a string or buffer containing the secret (symmetric) or PEM-encoded public key (asymmetric) for verifying the token's signature.
+* `secretOrKeyProvider(request: Request, rawJwtToken: string): string | Buffer | Promise<string | Buffer>` is a function which should return a secret or PEM-encoded public key (asymmetric) for the given key and request combination. Note it is up to the implementer to decode rawJwtToken.
+  Owerrides `secretOrKey`.
+* `extractToken(request: Request): string | null` Required. Function that accepts a request as the only parameter and returns either the JWT as a string or null. See [Extracting the JWT from the request](#extracting-the-jwt-from-the-request) for more details.
+* `verifyJwt({token: string, secretOrKey: string | Buffer, options: T}): Promise<JwtPayload>`: JWT verifying function. Library contains default imlementation using [jsonwebtoken](https://github.com/auth0/node-jsonwebtoken).
+* `verifyJwtOptions`: Contains additional options for `verifyJwt` For `jsonWebTokenVerifier` pass here an options object for any other option you can pass the jsonwebtoken verifier. (i.e maxAge)
 * `passReqToCallback`: If true the request will be passed to the verify
-  callback. i.e. verify(request, jwt_payload, done_callback).
-* `verifyJwtOptions`: passport-jwt is verifying the token using [jsonwebtoken](https://github.com/auth0/node-jsonwebtoken).
-Pass here an options object for any other option you can pass the jsonwebtoken verifier. (i.e maxAge)
+  callback. i.e. verify(request, jwtPayload, doneCallback).
 
-`verify` is a function with the parameters `verify(jwt_payload, done)`
 
-* `jwt_payload` is an object literal containing the decoded JWT payload.
+`verify` is a function with the parameters `verify(jwtPayload, done)`
+
+* `request` is an Express request.
+* `jwtPayload` is an object literal containing the decoded JWT payload.
 * `done` is a passport error first callback accepting arguments
   done(error, user, info)
 
@@ -46,28 +42,38 @@ An example configuration which reads the JWT from the http
 Authorization header with the scheme 'bearer':
 
 ```ts
-import {Strategy as JwtStrategy, fromAuthHeaderAsBearerToken} from 'passport-jwt';
+import {
+  Strategy as JwtStrategy,
+  fromAuthHeaderAsBearerToken,
+  jsonWebTokenVerifier,
+} from 'passport-jwt-async';
 
-passport.use(new JwtStrategy({
-    extractToken: fromAuthHeaderAsBearerToken(),
-    secretOrKey: 'secret',
-    verifyJwtOptions: {
-      issuer: 'accounts.examplesoft.com',
-      audience: 'yoursite.net'
-    }
-  }, function({sub}, done) {
-    User.findOne({id: sub}, function(err, user) {
+passport.use(
+  new JwtStrategy(
+    {
+      extractToken: fromAuthHeaderAsBearerToken(),
+      secretOrKey: 'secret',
+      verifyJwt: jsonWebTokenVerifier,
+      verifyJwtOptions: {
+        issuer: 'accounts.examplesoft.com',
+        audience: 'yoursite.net',
+      },
+    },
+    function ({ payload: { sub } }, done) {
+      User.findOne({ id: sub }, function (err, user) {
         if (err) {
-            return done(err, false);
+          return done(err, false);
         }
         if (user) {
-            return done(null, user);
+          return done(null, user);
         } else {
-            return done(null, false);
-            // or you could create a new account
+          return done(null, false);
+          // or you could create a new account
         }
-    });
-}));
+      });
+    }
+  )
+);
 ```
 
 ### Extracting the JWT from the request
@@ -75,7 +81,7 @@ passport.use(new JwtStrategy({
 There are a number of ways the JWT may be included in a request.  In order to remain as flexible as
 possible the JWT is parsed from the request by a user-supplied callback passed in as the
 `extractToken` parameter.  This callback, from now on referred to as an extractor,
-accepts a request object as an argument and returns the encoded JWT string or *null*.
+accepts a request object as an argument and returns the encoded JWT string or null.
 
 #### Included extractors
 
@@ -109,13 +115,11 @@ const cookieExtractor = (req) => {
     }
     return token;
 };
-// ...
-opts.extractToken = cookieExtractor;
 ```
 
 ### Authenticate requests
 
-Use `passport.authenticate()` specifying `'JWT'` as the strategy.
+Use `passport.authenticate()` specifying `'jwt'` as the strategy.
 
 ```ts
 app.post('/profile', passport.authenticate('jwt', { session: false }),
