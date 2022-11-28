@@ -24,15 +24,10 @@ describe('Strategy requests', () => {
           next(null, {}, {})
       );
 
-      use(strategy)
+      use(strategy, done)
         .success(() => {
-          try {
-            sinon.assert.calledOnce(verifyJwtMock);
-            expect(verifyJwtMock.args[0][0].token).to.equal(testData.token);
-            done();
-          } catch (err) {
-            done(err);
-          }
+          sinon.assert.calledOnce(verifyJwtMock);
+          expect(verifyJwtMock.args[0][0].token).to.equal(testData.token);
         })
         .authenticate();
     });
@@ -54,15 +49,10 @@ describe('Strategy requests', () => {
           next(null, {}, {})
       );
 
-      use(strategy)
+      use(strategy, done)
         .fail((info) => {
-          try {
-            expect(info).to.have.property('message', 'No auth token');
-            sinon.assert.notCalled(verifyJwtMock);
-            done();
-          } catch (err) {
-            done(err);
-          }
+          expect(info).to.have.property('message', 'No auth token');
+          sinon.assert.notCalled(verifyJwtMock);
         })
         .req((req) => {
           req.body = {};
@@ -87,14 +77,9 @@ describe('Strategy requests', () => {
           next(null, {}, {})
       );
 
-      use(strategy)
+      use(strategy, done)
         .fail((info) => {
-          try {
-            expect(info).to.have.property('message', 'No auth token');
-            done();
-          } catch (err) {
-            done(err);
-          }
+          expect(info).to.have.property('message', 'No auth token');
         })
         .req((req) => {
           req.body = {};

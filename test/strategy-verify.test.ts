@@ -19,15 +19,10 @@ describe('Strategy verify', () => {
         (_paylod, next) => next(null, { user_id: 1234567890 }, { foo: 'bar' })
       );
 
-      use(strategy)
+      use(strategy, done)
         .success((user, info) => {
-          try {
-            expect(user).to.have.property('user_id', 1234567890);
-            expect(info).to.have.property('foo', 'bar');
-            done();
-          } catch (err) {
-            done(err);
-          }
+          expect(user).to.have.property('user_id', 1234567890);
+          expect(info).to.have.property('foo', 'bar');
         })
         .req((req) => {
           req.headers['authorization'] = 'bearer ' + testData.token;
@@ -49,14 +44,9 @@ describe('Strategy verify', () => {
         (_payload, next) => next(null, false, { message: 'invalid user' })
       );
 
-      use(strategy)
+      use(strategy, done)
         .fail((info) => {
-          try {
-            expect(info).to.have.property('message', 'invalid user');
-            done();
-          } catch (err) {
-            done(err);
-          }
+          expect(info).to.have.property('message', 'invalid user');
         })
         .req((req) => {
           req.headers['authorization'] = 'bearer ' + testData.token;
@@ -77,15 +67,10 @@ describe('Strategy verify', () => {
           next(new Error('ERROR'), false, { message: 'invalid user' })
       );
 
-      use(strategy)
+      use(strategy, done)
         .error((error) => {
-          try {
-            expect(error).to.be.an.instanceof(Error);
-            expect(error.message).to.equal('ERROR');
-            done();
-          } catch (err) {
-            done(err);
-          }
+          expect(error).to.be.an.instanceof(Error);
+          expect(error.message).to.equal('ERROR');
         })
         .req((req) => {
           req.headers['authorization'] = 'bearer ' + testData.token;
@@ -107,15 +92,10 @@ describe('Strategy verify', () => {
         }
       );
 
-      use(strategy)
+      use(strategy, done)
         .error((error) => {
-          try {
-            expect(error).to.be.an.instanceof(Error);
-            expect(error.message).to.equal('EXCEPTION');
-            done();
-          } catch (err) {
-            done(err);
-          }
+          expect(error).to.be.an.instanceof(Error);
+          expect(error.message).to.equal('EXCEPTION');
         })
         .req((req) => {
           req.headers['authorization'] = 'bearer ' + testData.token;
@@ -179,22 +159,17 @@ describe('Strategy verify', () => {
         (_payload, next) => next(null, { user_id: 'dont care' }, {})
       );
 
-      use(strategy)
+      use(strategy, done)
         .success(() => {
-          try {
-            expect(
-              fakeSecretOrKeyProvider.calledWith(
-                expectedRequest,
-                'an undecoded jwt string'
-              )
-            ).to.be.true;
-            expect(verifyJwtStub.args[0][0].secretOrKey).to.be.equal(
-              'secret from callback'
-            );
-            done();
-          } catch (err) {
-            done(err);
-          }
+          expect(
+            fakeSecretOrKeyProvider.calledWith(
+              expectedRequest,
+              'an undecoded jwt string'
+            )
+          ).to.be.true;
+          expect(verifyJwtStub.args[0][0].secretOrKey).to.be.equal(
+            'secret from callback'
+          );
         })
         .req((req) => {
           expectedRequest = req;
@@ -217,16 +192,11 @@ describe('Strategy verify', () => {
         (_payload, next) => next(null, { user_id: 'dont care' }, {})
       );
 
-      use(strategy)
+      use(strategy, done)
         .fail((errorMessage) => {
-          try {
-            expect(errorMessage).to.equal(
-              'Error occurred looking for the secret'
-            );
-            done();
-          } catch (err) {
-            done(err);
-          }
+          expect(errorMessage).to.equal(
+            'Error occurred looking for the secret'
+          );
         })
         .authenticate();
     });

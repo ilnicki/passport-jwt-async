@@ -34,26 +34,21 @@ describe('Strategy validation', () => {
         verifyStub
       );
 
-      use(strategy)
+      use(strategy, done)
         .success(() => {
-          try {
-            expect(verifyJwtStub.args[0][0]).to.have.property(
-              'secretOrKey',
-              'secret'
-            );
-            expect(verifyJwtStub.args[0][0]).to.have.property('options');
-            expect(verifyJwtStub.args[0][0].options).to.deep.equal({
-              algorithms: ['HS256', 'HS384'],
-              issuer: 'TestIssuer',
-              audience: 'TestAudience',
-              clockTolerance: 10,
-              maxAge: '1h',
-              ignoreExpiration: false,
-            });
-            done();
-          } catch (err) {
-            done(err);
-          }
+          expect(verifyJwtStub.args[0][0]).to.have.property(
+            'secretOrKey',
+            'secret'
+          );
+          expect(verifyJwtStub.args[0][0]).to.have.property('options');
+          expect(verifyJwtStub.args[0][0].options).to.deep.equal({
+            algorithms: ['HS256', 'HS384'],
+            issuer: 'TestIssuer',
+            audience: 'TestAudience',
+            clockTolerance: 10,
+            maxAge: '1h',
+            ignoreExpiration: false,
+          });
         })
         .req((req) => {
           req.headers['authorization'] = 'bearer ' + testData.token;
@@ -78,14 +73,9 @@ describe('Strategy validation', () => {
         }
       );
 
-      use(strategy)
+      use(strategy, done)
         .success((payload) => {
-          try {
-            expect(payload).to.deep.equal(testData.payload);
-            done();
-          } catch (err) {
-            done(err);
-          }
+          expect(payload).to.deep.equal(testData.payload);
         })
         .req((req) => {
           req.headers['authorization'] = 'bearer ' + testData.token;
@@ -110,15 +100,10 @@ describe('Strategy validation', () => {
         verifySpy
       );
 
-      use(strategy)
+      use(strategy, done)
         .fail((info) => {
-          try {
-            sinon.assert.notCalled(verifySpy);
-            expect(info).to.have.property('message', 'jwt expired');
-            done();
-          } catch (err) {
-            done(err);
-          }
+          sinon.assert.notCalled(verifySpy);
+          expect(info).to.have.property('message', 'jwt expired');
         })
         .req((req) => {
           req.headers['authorization'] = 'bearer ' + testData.token;
@@ -140,15 +125,10 @@ describe('Strategy validation', () => {
         verifySpy
       );
 
-      use(strategy)
+      use(strategy, done)
         .fail((info) => {
-          try {
-            sinon.assert.notCalled(verifySpy);
-            expect(info).to.be.an.instanceof(Error);
-            done();
-          } catch (err) {
-            done(err);
-          }
+          sinon.assert.notCalled(verifySpy);
+          expect(info).to.be.an.instanceof(Error);
         })
         .req((req) => {
           req.headers['authorization'] = 'malformed';

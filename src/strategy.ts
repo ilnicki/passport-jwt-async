@@ -123,7 +123,7 @@ export class JwtStrategy<T extends object = any> extends Strategy {
   /**
    * Authenticate request based on JWT obtained from header or post body
    */
-  public async authenticate(request: Request, options): Promise<void> {
+  public async authenticate(request: Request): Promise<void> {
     const token = this.extractToken(request);
 
     if (!token) {
