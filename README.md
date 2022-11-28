@@ -22,7 +22,7 @@ The JWT authentication strategy is constructed as follows:
 extracted from the request and verified.
 
 * `secretOrKey` is a string or buffer containing the secret (symmetric) or PEM-encoded public key (asymmetric) for verifying the token's signature.
-* `secretOrKeyProvider(request: Request, rawJwtToken: string): string | Buffer | Promise<string | Buffer>` is a function which should return a secret or PEM-encoded public key (asymmetric) for the given key and request combination. Note it is up to the implementer to decode rawJwtToken.
+* `secretOrKeyProvider(request: Request, rawJwtToken: string): Promise<string | Buffer | undefined>` is a function which should return a secret or PEM-encoded public key (asymmetric) for the given key and request combination. Note it is up to the implementer to decode rawJwtToken.
   Owerrides `secretOrKey`.
 * `extractToken(request: Request): string | null` Required. Function that accepts a request as the only parameter and returns either the JWT as a string or null. See [Extracting the JWT from the request](#extracting-the-jwt-from-the-request) for more details.
 * `verifyJwt({token: string, secretOrKey: string | Buffer, options: T}): Promise<JwtPayload>`: JWT verifying function. Library contains default imlementation using [jsonwebtoken](https://github.com/auth0/node-jsonwebtoken).

@@ -6,6 +6,7 @@ import { use } from './chai-passport-strategy';
 import { JwtStrategy as Strategy } from '../src/strategy';
 import * as testData from './testdata';
 import { fromAuthHeaderAsBearerToken } from '../src/extract-jwt';
+import { Request } from 'express';
 
 describe('Strategy verify', () => {
   describe('Handling a request with a valid JWT and succesful verification', () => {
@@ -106,8 +107,8 @@ describe('Strategy verify', () => {
 
   describe('handling a request with a valid jwt and option passReqToCallback is true', () => {
     it('will call verify with request as the first argument', (done) => {
-      let expectedRequest;
-      let passedRequest;
+      let expectedRequest: Request;
+      let passedRequest: Request | undefined;
 
       const strategy = new Strategy(
         {
@@ -141,13 +142,13 @@ describe('Strategy verify', () => {
 
   describe('handling a request when constructed with a secretOrKeyProvider function that succeeds', () => {
     it('should call the secret or key provider and jwt verifier', (done) => {
-      let expectedRequest;
+      let expectedRequest: Request;
 
       const verifyJwtStub = sinon.stub();
       verifyJwtStub.resolves(testData.payload);
 
       const fakeSecretOrKeyProvider = sinon.spy(
-        (_r, _t) => 'secret from callback'
+        async (_r, _t) => 'secret from callback'
       );
 
       const strategy = new Strategy(

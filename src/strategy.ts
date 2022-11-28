@@ -6,7 +6,7 @@ import { JwtPayload } from './jwt-payload';
 export type SecretOrKeyProvider = (
   request: Request,
   rawJwtToken: string
-) => string | Buffer | Promise<string | Buffer>;
+) => Promise<string | Buffer | undefined>;
 
 export type VerifyCallback = (
   result: {
@@ -18,8 +18,8 @@ export type VerifyCallback = (
 
 export type JwtVerifier<T extends object> = (params: {
   token: string;
-  secretOrKey: string | Buffer;
-  options: T;
+  secretOrKey?: string | Buffer;
+  options?: T;
 }) => Promise<JwtPayload>;
 
 export interface JwtStrategyOptions<T extends object> {
@@ -59,7 +59,7 @@ export interface JwtStrategyOptions<T extends object> {
 
 export class JwtStrategy<T extends object = any> extends Strategy {
   private verifyJwt: JwtVerifier<T>;
-  private verifyJwtOptions: T;
+  private verifyJwtOptions?: T;
 
   private secretOrKeyProvider: SecretOrKeyProvider;
   private extractToken: TokenExtractor;
@@ -85,16 +85,13 @@ export class JwtStrategy<T extends object = any> extends Strategy {
       throw new TypeError('JwtStrategy requires a verify callback');
     }
 
-    this.verifyJwt = verifyJwt;
-    this.verifyJwtOptions = verifyJwtOptions;
-    if (!this.verifyJwt) {
+    if (!verifyJwt) {
       throw new TypeError('JwtStrategy requires a token verifier');
     }
+    this.verifyJwt = verifyJwt;
+    this.verifyJwtOptions = verifyJwtOptions;
 
-    this.secretOrKeyProvider = secretOrKeyProvider;
-    if (!this.secretOrKeyProvider) {
-      this.secretOrKeyProvider = () => secretOrKey;
-    }
+    this.secretOrKeyProvider = secretOrKeyProvider ?? (async () => secretOrKey);
 
     this.extractToken = extractToken;
     if (!this.extractToken) {
@@ -150,7 +147,7 @@ export class JwtStrategy<T extends object = any> extends Strategy {
 
         return this.success(user, info);
       } catch (verifyError) {
-        return this.error(verifyError);
+        return this.error(verifyError as Error);
       }
     } catch (secretOrKeyError) {
       return this.fail(secretOrKeyError, 401);

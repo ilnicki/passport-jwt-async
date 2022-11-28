@@ -1,8 +1,10 @@
+// @ts-ignore
 import * as Test from 'chai-passport-strategy/lib/test';
+import { Request } from 'express';
 import { Done } from 'mocha';
 import { Strategy } from 'passport-strategy';
 
-class DoneTest extends Test {
+class DoneTest extends (Test as any) {
   constructor(strategy: Strategy, private readonly done?: Done) {
     super(strategy);
   }
@@ -22,32 +24,32 @@ class DoneTest extends Test {
       : fn;
   }
 
-  public success(cb): this {
+  public success(cb: (user: any, info: any) => void): this {
     super.success(this.wrap(cb));
     return this;
   }
 
-  public fail(cb): this {
+  public fail(cb: (challenge: Error, status: number) => void): this {
     super.fail(this.wrap(cb));
     return this;
   }
 
-  public redirect(cb): this {
+  public redirect(cb: (url: string, status: number) => void): this {
     super.redirect(this.wrap(cb));
     return this;
   }
 
-  public pass(cb): this {
+  public pass(cb: () => void): this {
     super.pass(this.wrap(cb));
     return this;
   }
 
-  public error(cb): this {
+  public error(cb: (err: Error) => void): this {
     super.error(this.wrap(cb));
     return this;
   }
 
-  public req(cb): this {
+  public req(cb: (req: Request, ready: () => void) => void): this {
     super.req(cb);
     return this;
   }

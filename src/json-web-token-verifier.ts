@@ -1,4 +1,4 @@
-import { verify, VerifyOptions } from 'jsonwebtoken';
+import { verify, VerifyErrors, VerifyOptions } from 'jsonwebtoken';
 import { JwtPayload } from './jwt-payload';
 import { JwtVerifier } from './strategy';
 
@@ -8,9 +8,9 @@ export const jsonWebTokenVerifier: JwtVerifier<
   new Promise((resolve, reject) => {
     verify(
       token,
-      secretOrKey,
+      secretOrKey!,
       { ...options, complete: false },
-      (error, decoded) => {
+      (error: VerifyErrors | null, decoded: unknown) => {
         if (error) {
           return reject(error);
         }

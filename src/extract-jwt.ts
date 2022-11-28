@@ -10,7 +10,7 @@ const BEARER_AUTH_SCHEME = 'bearer';
 
 export const fromHeader =
   (headerName: string): TokenExtractor =>
-  (request: Request): string => {
+  (request) => {
     const header = request.headers[headerName];
     if (header && typeof header === 'string') {
       return header;
@@ -21,7 +21,7 @@ export const fromHeader =
 
 export const fromBodyField =
   (fieldName: string): TokenExtractor =>
-  (request: Request): string => {
+  (request) => {
     if (
       request.body &&
       Object.prototype.hasOwnProperty.call(request.body, fieldName)
@@ -34,7 +34,7 @@ export const fromBodyField =
 
 export const fromUrlQueryParameter =
   (paramName: string): TokenExtractor =>
-  (request: Request): string => {
+  (request) => {
     const {
       query: { [paramName]: param },
     } = url.parse(request.url, true);
@@ -50,7 +50,7 @@ export const fromAuthHeaderWithScheme = (
   authScheme: string
 ): TokenExtractor => {
   const authSchemeLower = authScheme.toLowerCase();
-  return (request: Request): string => {
+  return (request) => {
     if (request.headers[AUTH_HEADER]) {
       const authParams = parse(request.headers[AUTH_HEADER]);
       if (authParams && authSchemeLower === authParams.scheme.toLowerCase()) {
@@ -72,7 +72,7 @@ export const fromExtractors = (
     throw new TypeError('extractors.fromExtractors expects an array');
   }
 
-  return (request: Request): string => {
+  return (request) => {
     let token = null;
     extractors.some((extract) => {
       return (token = extract(request));

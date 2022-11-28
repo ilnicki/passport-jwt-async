@@ -6,6 +6,7 @@ import { use } from './chai-passport-strategy';
 
 import { JwtStrategy as Strategy } from '../src/strategy';
 import * as testData from './testdata';
+import { Request } from 'express';
 
 describe('Strategy requests', () => {
   describe('handling request JWT present in request', () => {
@@ -50,11 +51,11 @@ describe('Strategy requests', () => {
       );
 
       use(strategy, done)
-        .fail((info) => {
+        .fail((info: Error) => {
           expect(info).to.have.property('message', 'No auth token');
           sinon.assert.notCalled(verifyJwtMock);
         })
-        .req((req) => {
+        .req((req: Request) => {
           req.body = {};
         })
         .authenticate();
@@ -78,11 +79,12 @@ describe('Strategy requests', () => {
       );
 
       use(strategy, done)
-        .fail((info) => {
+        .fail((info: Error) => {
           expect(info).to.have.property('message', 'No auth token');
         })
-        .req((req) => {
+        .req((req: Request) => {
           req.body = {};
+          // @ts-expect-error
           req.url = new URL('https://test.org/');
         })
         .authenticate();
