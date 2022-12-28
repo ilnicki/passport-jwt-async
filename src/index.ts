@@ -4,6 +4,7 @@ export {
   SecretOrKeyProvider,
   VerifyCallback,
   JwtVerifier,
+  VerifyResult,
 } from './strategy';
 export {
   TokenExtractor,
