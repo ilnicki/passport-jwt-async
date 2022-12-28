@@ -8,11 +8,13 @@ export type SecretOrKeyProvider = (
   rawJwtToken: string
 ) => Promise<string | Buffer | undefined>;
 
+export interface VerifyResult {
+  payload: JwtPayload;
+  request?: Request;
+}
+
 export type VerifyCallback = (
-  result: {
-    payload: any;
-    request?: Request;
-  },
+  result: VerifyResult,
   done: (err: Error | null, user?: any, info?: any) => void
 ) => void;
 
